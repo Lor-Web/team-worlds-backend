@@ -1,0 +1,526 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Team Worlds API",
+    "version": "0.1.0",
+    "description": "REST API платформы Team Worlds — совместные игры с друзьями в «Мирах».\n\n**Authentication**\n- Access token (JWT) — в ответе login/register, передавать в `Authorization: Bearer ...`\n- Refresh token — httpOnly cookie, только на `/auth/*`; на фронте: `credentials: include`\n\n**Автовход на фронте**: `POST /auth/refresh` при старте приложения → `GET /users/me`"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Локальная разработка"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Регистрация, вход, refresh, выход"
+    },
+    {
+      "name": "Users",
+      "description": "Профиль и настройки"
+    },
+    {
+      "name": "System",
+      "description": "Служебные эндпоинты"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token из ответа login/register. Передавать в заголовке: Authorization: Bearer <token>"
+      },
+      "refreshCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken",
+        "description": "HttpOnly cookie с refresh-токеном. Path: /auth. На фронте: credentials: 'include'"
+      }
+    },
+    "schemas": {
+      "PublicUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID пользователя"
+          },
+          "username": {
+            "type": "string",
+            "description": "Имя пользователя"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL аватара"
+          },
+          "siteRole": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "description": "Роль пользователя на сайте"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата регистрации (ISO 8601)"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "avatar",
+          "siteRole",
+          "createdAt"
+        ]
+      },
+      "AuthTokensResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token (~15 мин). Хранить в памяти на фронте."
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicUser"
+          }
+        },
+        "required": [
+          "accessToken",
+          "user"
+        ],
+        "description": "Успешная аутентификация. Refresh token устанавливается в httpOnly cookie."
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "VALIDATION_ERROR"
+                ],
+                "description": "Код ошибки валидации"
+              },
+              "message": {
+                "type": "string",
+                "description": "Сообщение",
+                "example": "Validation failed"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Ошибки по полям"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Код ошибки",
+                "example": "INVALID_CREDENTIALS"
+              },
+              "message": {
+                "type": "string",
+                "description": "Текст ошибки"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "RegisterBody": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "pattern": "^[a-zA-Z0-9_]+$",
+            "description": "Имя пользователя",
+            "example": "alice"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "format": "password",
+            "description": "Пароль"
+          }
+        },
+        "required": [
+          "username",
+          "email",
+          "password"
+        ],
+        "description": "Данные для регистрации"
+      },
+      "LoginBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "format": "password",
+            "description": "Пароль"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "description": "Данные для входа"
+      },
+      "RefreshAccessResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Новый JWT access token"
+          }
+        },
+        "required": [
+          "accessToken"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/PublicUser"
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "HealthStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "description": "Состояние сервиса"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Время проверки (ISO 8601)"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "disconnected"
+            ],
+            "description": "Подключение к базе данных"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp",
+          "database"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Регистрация",
+        "description": "Создаёт пользователя, возвращает access token и профиль. Refresh token записывается в httpOnly cookie (нужен credentials: include на фронте).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Пользователь создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokensResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email или имя пользователя уже заняты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Вход",
+        "description": "Проверяет email и пароль. Возвращает access token и профиль. Refresh token — в httpOnly cookie.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный вход",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokensResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неверный email или пароль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Обновить access token",
+        "description": "Использует refresh token из cookie. Выполняет rotation: старый refresh удаляется, выдаётся новый в cookie. Вызывать при загрузке приложения для «тихого» входа.",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Новый access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshAccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Cookie отсутствует, истёк или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Выход",
+        "description": "Отзывает refresh token в БД и удаляет cookie. Тело ответа пустое.",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Успешный выход"
+          },
+          "401": {
+            "description": "Недействительный refresh token (опционально)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Текущий пользователь",
+        "description": "Возвращает профиль авторизованного пользователя по access token.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Профиль пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует, истёк или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Проверка состояния",
+        "description": "Health check API и подключения к базе данных.",
+        "responses": {
+          "200": {
+            "description": "Сервис работает",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Сервис недоступен (проблема с БД)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

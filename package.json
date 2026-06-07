@@ -1,0 +1,45 @@
+{
+  "name": "team-worlds-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "prisma db seed",
+    "openapi:export": "tsx scripts/export-openapi.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
+    "@prisma/client": "^6.9.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "ms": "^2.1.3",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.25.56"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.15.30",
+    "@types/swagger-ui-express": "^4.1.8",
+    "prisma": "^6.9.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

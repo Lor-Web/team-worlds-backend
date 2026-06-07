@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum SiteRole {
+  USER
+  ADMIN
+}
+
+enum WorldMemberRole {
+  owner
+  member
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatar       String?
+  siteRole     SiteRole @default(USER)
+  createdAt    DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+  ownedWorlds   World[]        @relation("WorldOwner")
+  memberships   WorldMember[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model World {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  ownerId    String
+  createdAt  DateTime @default(now())
+
+  owner   User          @relation("WorldOwner", fields: [ownerId], references: [id])
+  members WorldMember[]
+}
+
+model WorldMember {
+  userId      String
+  worldId     String
+  role        WorldMemberRole @default(member)
+  permissions Json            @default("[]")
+  joinedAt    DateTime        @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  world World @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  @@id([userId, worldId])
+}
