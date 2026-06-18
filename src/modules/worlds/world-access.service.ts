@@ -65,6 +65,27 @@ export const worldAccessService = {
     return membership;
   },
 
+  async requireActiveMembership(userId: string, worldId: string): Promise<WorldMembership> {
+    const membership = await this.requireMembership(userId, worldId);
+    const world = await worldsRepository.findById(worldId);
+
+    if (!world) {
+      throw new AppError('Мир не найден', {
+        statusCode: 404,
+        code: 'WORLD_NOT_FOUND',
+      });
+    }
+
+    if (world.deletedAt) {
+      throw new AppError('Мир в архиве', {
+        statusCode: 409,
+        code: 'WORLD_ARCHIVED',
+      });
+    }
+
+    return membership;
+  },
+
   async requirePermission(
     userId: string,
     worldId: string,

@@ -7,6 +7,7 @@ import './paths/auth.paths.js';
 import './paths/users.paths.js';
 import './paths/health.paths.js';
 import './paths/worlds.paths.js';
+import './paths/game-sessions.paths.js';
 
 export function generateOpenApiDocument() {
   const generator = new OpenApiGeneratorV3(openApiRegistry.definitions);
@@ -36,6 +37,7 @@ export function generateOpenApiDocument() {
       { name: 'Authentication', description: 'Регистрация, вход, refresh, выход' },
       { name: 'Users', description: 'Профиль и настройки' },
       { name: 'Worlds', description: 'Создание, вступление, список и участники' },
+      { name: 'Games', description: 'Игровые сессии и lifecycle лобби' },
       { name: 'System', description: 'Служебные эндпоинты' },
     ],
   });

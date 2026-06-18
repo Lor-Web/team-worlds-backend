@@ -1,16 +1,27 @@
-import type { World, WorldMemberRole } from '@prisma/client';
+import type { World, WorldMemberRole, WorldStage } from '@prisma/client';
 
 import { prisma } from '../../shared/db/prisma.js';
 
-const worldWithMemberCountSelect = {
+const worldSummarySelect = {
   id: true,
   name: true,
+  description: true,
+  avatarUrl: true,
+  backgroundUrl: true,
   inviteCode: true,
   tier: true,
+  level: true,
+  xp: true,
+  stage: true,
   ownerId: true,
+  deletedAt: true,
   createdAt: true,
   _count: { select: { members: true } },
 } as const;
+
+export type WorldSummaryRow = World & {
+  _count: { members: number };
+};
 
 export const worldsRepository = {
   createWorldWithOwner(data: {
@@ -44,7 +55,12 @@ export const worldsRepository = {
   },
 
   findByInviteCode(inviteCode: string) {
-    return prisma.world.findUnique({ where: { inviteCode } });
+    return prisma.world.findFirst({
+      where: {
+        inviteCode,
+        deletedAt: null,
+      },
+    });
   },
 
   findMembership(userId: string, worldId: string) {
@@ -69,12 +85,15 @@ export const worldsRepository = {
     });
   },
 
-  listWorldsForUser(userId: string) {
+  listWorldsForUser(userId: string, includeArchived: boolean) {
     return prisma.worldMember.findMany({
-      where: { userId },
+      where: {
+        userId,
+        world: includeArchived ? undefined : { deletedAt: null },
+      },
       include: {
         world: {
-          select: worldWithMemberCountSelect,
+          select: worldSummarySelect,
         },
       },
       orderBy: { joinedAt: 'desc' },
@@ -97,10 +116,133 @@ export const worldsRepository = {
     return prisma.worldMember.count({ where: { worldId } });
   },
 
-  updateWorld(worldId: string, data: { name: string }) {
+  updateWorld(
+    worldId: string,
+    data: {
+      name?: string;
+      description?: string;
+      avatarUrl?: string;
+      backgroundUrl?: string;
+    },
+  ) {
     return prisma.world.update({
       where: { id: worldId },
       data,
+    });
+  },
+
+  updateProgression(
+    worldId: string,
+    data: { xp: number; level: number; stage: WorldStage },
+  ) {
+    return prisma.world.update({
+      where: { id: worldId },
+      data,
+    });
+  },
+
+  softDeleteWorld(worldId: string): Promise<World> {
+    return prisma.$transaction(async (tx) => {
+      await tx.gameSession.updateMany({
+        where: {
+          worldId,
+          status: { in: ['lobby', 'active'] },
+        },
+        data: {
+          status: 'cancelled',
+          finishedAt: new Date(),
+        },
+      });
+
+      return tx.world.update({
+        where: { id: worldId },
+        data: { deletedAt: new Date() },
+      });
+    });
+  },
+
+  restoreWorld(worldId: string): Promise<World> {
+    return prisma.world.update({
+      where: { id: worldId },
+      data: { deletedAt: null },
+    });
+  },
+
+  listMemberUsers(worldId: string) {
+    return prisma.worldMember.findMany({
+      where: { worldId },
+      select: {
+        user: {
+          select: { id: true, username: true, avatar: true },
+        },
+      },
+    }).then((rows) => rows.map((row) => row.user));
+  },
+
+  listWorldIdsForUser(userId: string): Promise<string[]> {
+    return prisma.worldMember
+      .findMany({
+        where: { userId },
+        select: { worldId: true },
+      })
+      .then((rows) => rows.map((row) => row.worldId));
+  },
+
+  countActiveWorlds(): Promise<number> {
+    return prisma.world.count({ where: { deletedAt: null } });
+  },
+
+  listActiveWorldsForRanking() {
+    return prisma.world.findMany({
+      where: { deletedAt: null },
+      select: { id: true, xp: true, level: true, createdAt: true },
+      orderBy: [{ xp: 'desc' }, { level: 'desc' }, { createdAt: 'asc' }],
+    });
+  },
+
+  async getWorldRank(
+    world: Pick<World, 'id' | 'xp' | 'level' | 'createdAt' | 'deletedAt'>,
+  ): Promise<number> {
+    if (world.deletedAt) {
+      return 0;
+    }
+
+    const ahead = await prisma.world.count({
+      where: {
+        deletedAt: null,
+        OR: [
+          { xp: { gt: world.xp } },
+          {
+            xp: world.xp,
+            level: { gt: world.level },
+          },
+          {
+            xp: world.xp,
+            level: world.level,
+            createdAt: { lt: world.createdAt },
+          },
+        ],
+      },
+    });
+
+    return ahead + 1;
+  },
+
+  listLeaderboard(limit: number) {
+    return prisma.world.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        level: true,
+        xp: true,
+        stage: true,
+        createdAt: true,
+        _count: { select: { members: true } },
+      },
+      orderBy: [{ xp: 'desc' }, { level: 'desc' }, { createdAt: 'asc' }],
+      take: limit,
     });
   },
 };

@@ -11,6 +11,10 @@ export const worldTierSchema = z
     example: 'STANDARD',
   });
 
+export const worldStageSchema = z
+  .enum(['OUTPOST', 'SETTLEMENT', 'CITY', 'METROPOLIS', 'CELESTIAL_CITADEL'])
+  .openapi({ description: 'Стадия эволюции мира' });
+
 export const worldMemberRoleSchema = z
   .enum(['owner', 'member'])
   .openapi({ description: 'Роль участника в мире' });
@@ -18,6 +22,32 @@ export const worldMemberRoleSchema = z
 export const worldPermissionSchema = z
   .enum(WORLD_PERMISSION_CODES as [string, ...string[]])
   .openapi({ description: 'Дополнительное право участника (owner имеет все права)' });
+
+export const worldProgressionSchema = z
+  .object({
+    level: z.number().int().openapi({ description: 'Уровень мира' }),
+    xp: z.number().int().openapi({ description: 'Накопленный опыт' }),
+    stage: worldStageSchema,
+    stageName: z.string().openapi({ description: 'Название стадии на русском' }),
+    xpInLevel: z.number().int().openapi({ description: 'XP внутри текущего уровня' }),
+    xpToNextLevel: z.number().int().openapi({ description: 'XP до следующего уровня' }),
+    progressToNextLevel: z
+      .number()
+      .min(0)
+      .max(1)
+      .openapi({ description: 'Прогресс до след. уровня (0..1)' }),
+  })
+  .openapi('WorldProgression');
+
+export const worldProfileSchema = z
+  .object({
+    description: z.string().openapi({ description: 'Описание мира' }),
+    avatarUrl: z.string().openapi({ description: 'URL аватарки (пока заглушка — пустая строка)' }),
+    backgroundUrl: z
+      .string()
+      .openapi({ description: 'URL фона (пока заглушка — пустая строка)' }),
+  })
+  .openapi('WorldProfile');
 
 export const createWorldBodySchema = z
   .object({
@@ -49,6 +79,51 @@ export const worldIdParamsSchema = z
   })
   .openapi('WorldIdParams');
 
+export const listWorldsQuerySchema = z
+  .object({
+    includeArchived: z
+      .enum(['true', 'false'])
+      .optional()
+      .default('false')
+      .transform((value) => value === 'true')
+      .openapi({
+        description: 'Включить архивные миры в список',
+      }),
+  })
+  .openapi('ListWorldsQuery');
+
+export const listWorldLeaderboardQuerySchema = z
+  .object({
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(50)
+      .openapi({ description: 'Сколько миров вернуть в топе' }),
+  })
+  .openapi('ListWorldLeaderboardQuery');
+
+export const worldRankingSchema = z
+  .object({
+    rank: z
+      .number()
+      .int()
+      .nullable()
+      .openapi({ description: 'Место в глобальном топе (null для архивных)' }),
+    totalWorlds: z.number().int().openapi({ description: 'Всего активных миров' }),
+  })
+  .openapi('WorldRanking');
+
+export const worldOnlineMemberSchema = z
+  .object({
+    id: z.string(),
+    username: z.string(),
+    avatar: z.string().nullable(),
+  })
+  .openapi('WorldOnlineMember');
+
 export const updateWorldBodySchema = z
   .object({
     name: z
@@ -56,12 +131,41 @@ export const updateWorldBodySchema = z
       .trim()
       .min(2, 'Название: минимум 2 символа')
       .max(64, 'Название: максимум 64 символа')
+      .optional()
       .openapi({ description: 'Новое название мира', example: 'Новое название' }),
+    description: z
+      .string()
+      .trim()
+      .max(500, 'Описание: максимум 500 символов')
+      .optional()
+      .openapi({ description: 'Описание мира (только owner)' }),
+    avatarUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .optional()
+      .openapi({ description: 'URL аватарки (только owner)' }),
+    backgroundUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .optional()
+      .openapi({ description: 'URL фона (только owner)' }),
   })
+  .refine(
+    (body) =>
+      body.name !== undefined ||
+      body.description !== undefined ||
+      body.avatarUrl !== undefined ||
+      body.backgroundUrl !== undefined,
+    { message: 'Укажите хотя бы одно поле для обновления' },
+  )
   .openapi('UpdateWorldBody');
 
-export const worldSummarySchema = z
-  .object({
+export const worldSummarySchema = worldProfileSchema
+  .merge(worldProgressionSchema)
+  .merge(worldRankingSchema)
+  .extend({
     id: z.string().openapi({ description: 'ID мира' }),
     name: z.string().openapi({ description: 'Название' }),
     inviteCode: z.string().openapi({ description: 'Код приглашения' }),
@@ -72,6 +176,7 @@ export const worldSummarySchema = z
       .openapi({ description: 'Максимум участников для текущего статуса' }),
     ownerId: z.string().openapi({ description: 'ID владельца' }),
     createdAt: z.string().datetime().openapi({ description: 'Дата создания' }),
+    isArchived: z.boolean().openapi({ description: 'Мир в архиве' }),
     myRole: worldMemberRoleSchema.openapi({ description: 'Ваша роль в мире' }),
     memberCount: z.number().int().openapi({ description: 'Текущее число участников' }),
   })
@@ -89,20 +194,42 @@ export const worldMemberSchema = z
   })
   .openapi('WorldMember');
 
-export const worldDetailSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    inviteCode: z.string(),
-    tier: worldTierSchema,
-    maxMembers: z.number().int(),
-    ownerId: z.string(),
-    createdAt: z.string().datetime(),
-    myRole: worldMemberRoleSchema,
-    memberCount: z.number().int(),
+export const worldDetailSchema = worldSummarySchema
+  .extend({
     members: z.array(worldMemberSchema),
+    onlineMembers: z
+      .array(worldOnlineMemberSchema)
+      .openapi({ description: 'Участники мира, сейчас онлайн на сайте' }),
+    onlineCount: z
+      .number()
+      .int()
+      .openapi({ description: 'Сколько участников мира онлайн на сайте' }),
   })
   .openapi('WorldDetail');
+
+export const worldLeaderboardItemSchema = z
+  .object({
+    rank: z.number().int(),
+    id: z.string(),
+    name: z.string(),
+    avatarUrl: z.string(),
+    level: z.number().int(),
+    xp: z.number().int(),
+    stage: worldStageSchema,
+    stageName: z.string(),
+    memberCount: z.number().int(),
+  })
+  .openapi('WorldLeaderboardItem');
+
+export const worldLeaderboardResponseSchema = z
+  .object({
+    worlds: z.array(worldLeaderboardItemSchema),
+    totalWorlds: z
+      .number()
+      .int()
+      .openapi({ description: 'Всего активных миров в рейтинге' }),
+  })
+  .openapi('WorldLeaderboardResponse');
 
 export const worldListResponseSchema = z
   .object({
@@ -127,3 +254,5 @@ export const joinWorldResponseSchema = worldResponseSchema.openapi('JoinWorldRes
 export type CreateWorldBody = z.infer<typeof createWorldBodySchema>;
 export type JoinWorldBody = z.infer<typeof joinWorldBodySchema>;
 export type UpdateWorldBody = z.infer<typeof updateWorldBodySchema>;
+export type ListWorldsQuery = z.infer<typeof listWorldsQuerySchema>;
+export type ListWorldLeaderboardQuery = z.infer<typeof listWorldLeaderboardQuerySchema>;

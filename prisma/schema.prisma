@@ -23,6 +23,33 @@ enum WorldTier {
   VIP
 }
 
+enum WorldStage {
+  OUTPOST
+  SETTLEMENT
+  CITY
+  METROPOLIS
+  CELESTIAL_CITADEL
+}
+
+enum GameSessionStatus {
+  lobby
+  active
+  finished
+  cancelled
+}
+
+enum GamePlayerRole {
+  host
+  player
+}
+
+enum GameTemplateSlug {
+  quiz
+  mafia
+  alias
+  custom
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -33,8 +60,10 @@ model User {
   createdAt    DateTime @default(now())
 
   refreshTokens RefreshToken[]
-  ownedWorlds   World[]        @relation("WorldOwner")
+  ownedWorlds   World[]             @relation("WorldOwner")
   memberships   WorldMember[]
+  hostedSessions GameSession[]      @relation("GameSessionHost")
+  gamePlayers    GameSessionPlayer[]
 }
 
 model RefreshToken {
@@ -50,15 +79,23 @@ model RefreshToken {
 }
 
 model World {
-  id         String    @id @default(cuid())
-  name       String
-  inviteCode String    @unique
-  tier       WorldTier @default(STANDARD)
-  ownerId    String
-  createdAt  DateTime  @default(now())
+  id             String     @id @default(cuid())
+  name           String
+  description    String     @default("")
+  avatarUrl      String     @default("")
+  backgroundUrl  String     @default("")
+  inviteCode     String     @unique
+  tier           WorldTier  @default(STANDARD)
+  level          Int        @default(1)
+  xp             Int        @default(0)
+  stage          WorldStage @default(OUTPOST)
+  ownerId        String
+  deletedAt      DateTime?
+  createdAt      DateTime   @default(now())
 
-  owner   User          @relation("WorldOwner", fields: [ownerId], references: [id])
-  members WorldMember[]
+  owner        User          @relation("WorldOwner", fields: [ownerId], references: [id])
+  members      WorldMember[]
+  gameSessions GameSession[]
 }
 
 model WorldMember {
@@ -72,4 +109,58 @@ model WorldMember {
   world World @relation(fields: [worldId], references: [id], onDelete: Cascade)
 
   @@id([userId, worldId])
+}
+
+model GameTemplate {
+  id              String           @id @default(cuid())
+  slug            GameTemplateSlug @unique
+  name            String
+  description     String?
+  minPlayers      Int              @default(2)
+  maxPlayers      Int              @default(10)
+  defaultSettings Json             @default("{}")
+  isEnabled       Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+
+  sessions GameSession[]
+}
+
+model GameSession {
+  id         String             @id @default(cuid())
+  worldId    String
+  templateId String
+  hostId     String
+  status     GameSessionStatus  @default(lobby)
+  settings   Json               @default("{}")
+  gameConfig Json               @default("{}")
+  hostGraceExpiresAt DateTime?
+  createdAt  DateTime           @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  world    World               @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  template GameTemplate        @relation(fields: [templateId], references: [id])
+  host     User                @relation("GameSessionHost", fields: [hostId], references: [id])
+  players  GameSessionPlayer[]
+
+  @@index([worldId, status])
+  @@index([worldId, createdAt])
+}
+
+model GameSessionPlayer {
+  gameSessionId String
+  userId        String
+  role          GamePlayerRole @default(player)
+  isReady       Boolean        @default(false)
+  score         Int            @default(0)
+  rank          Int?
+  rewards       Json           @default("{}")
+  joinedAt      DateTime       @default(now())
+  leftAt        DateTime?
+
+  session GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([gameSessionId, userId])
+  @@index([userId])
 }

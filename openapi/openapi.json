@@ -25,6 +25,10 @@
       "description": "Создание, вступление, список и участники"
     },
     {
+      "name": "Games",
+      "description": "Игровые сессии и lifecycle лобби"
+    },
+    {
       "name": "System",
       "description": "Служебные эндпоинты"
     }
@@ -283,6 +287,64 @@
       "WorldSummary": {
         "type": "object",
         "properties": {
+          "description": {
+            "type": "string",
+            "description": "Описание мира"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "URL аватарки (пока заглушка — пустая строка)"
+          },
+          "backgroundUrl": {
+            "type": "string",
+            "description": "URL фона (пока заглушка — пустая строка)"
+          },
+          "level": {
+            "type": "integer",
+            "description": "Уровень мира"
+          },
+          "xp": {
+            "type": "integer",
+            "description": "Накопленный опыт"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "OUTPOST",
+              "SETTLEMENT",
+              "CITY",
+              "METROPOLIS",
+              "CELESTIAL_CITADEL"
+            ],
+            "description": "Стадия эволюции мира"
+          },
+          "stageName": {
+            "type": "string",
+            "description": "Название стадии на русском"
+          },
+          "xpInLevel": {
+            "type": "integer",
+            "description": "XP внутри текущего уровня"
+          },
+          "xpToNextLevel": {
+            "type": "integer",
+            "description": "XP до следующего уровня"
+          },
+          "progressToNextLevel": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Прогресс до след. уровня (0..1)"
+          },
+          "rank": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Место в глобальном топе (null для архивных)"
+          },
+          "totalWorlds": {
+            "type": "integer",
+            "description": "Всего активных миров"
+          },
           "id": {
             "type": "string",
             "description": "ID мира"
@@ -318,6 +380,10 @@
             "format": "date-time",
             "description": "Дата создания"
           },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Мир в архиве"
+          },
           "myRole": {
             "type": "string",
             "enum": [
@@ -332,6 +398,18 @@
           }
         },
         "required": [
+          "description",
+          "avatarUrl",
+          "backgroundUrl",
+          "level",
+          "xp",
+          "stage",
+          "stageName",
+          "xpInLevel",
+          "xpToNextLevel",
+          "progressToNextLevel",
+          "rank",
+          "totalWorlds",
           "id",
           "name",
           "inviteCode",
@@ -339,6 +417,7 @@
           "maxMembers",
           "ownerId",
           "createdAt",
+          "isArchived",
           "myRole",
           "memberCount"
         ]
@@ -410,6 +489,76 @@
           "worlds"
         ]
       },
+      "WorldLeaderboardItem": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer"
+          },
+          "xp": {
+            "type": "integer"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "OUTPOST",
+              "SETTLEMENT",
+              "CITY",
+              "METROPOLIS",
+              "CELESTIAL_CITADEL"
+            ],
+            "description": "Стадия эволюции мира"
+          },
+          "stageName": {
+            "type": "string"
+          },
+          "memberCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "id",
+          "name",
+          "avatarUrl",
+          "level",
+          "xp",
+          "stage",
+          "stageName",
+          "memberCount"
+        ]
+      },
+      "WorldLeaderboardResponse": {
+        "type": "object",
+        "properties": {
+          "worlds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorldLeaderboardItem"
+            }
+          },
+          "totalWorlds": {
+            "type": "integer",
+            "description": "Всего активных миров в рейтинге"
+          }
+        },
+        "required": [
+          "worlds",
+          "totalWorlds"
+        ]
+      },
       "WorldMember": {
         "type": "object",
         "properties": {
@@ -455,67 +604,58 @@
           "user"
         ]
       },
-      "WorldDetail": {
+      "WorldOnlineMember": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "name": {
+          "username": {
             "type": "string"
           },
-          "inviteCode": {
-            "type": "string"
-          },
-          "tier": {
+          "avatar": {
             "type": "string",
-            "enum": [
-              "STANDARD",
-              "EXTENDED",
-              "VIP"
-            ],
-            "description": "Статус мира: STANDARD — обычный, EXTENDED — расширенный, VIP — VIP",
-            "example": "STANDARD"
-          },
-          "maxMembers": {
-            "type": "integer"
-          },
-          "ownerId": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "myRole": {
-            "type": "string",
-            "enum": [
-              "owner",
-              "member"
-            ],
-            "description": "Роль участника в мире"
-          },
-          "memberCount": {
-            "type": "integer"
-          },
-          "members": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorldMember"
-            }
+            "nullable": true
           }
         },
         "required": [
           "id",
-          "name",
-          "inviteCode",
-          "tier",
-          "maxMembers",
-          "ownerId",
-          "createdAt",
-          "myRole",
-          "memberCount",
-          "members"
+          "username",
+          "avatar"
+        ]
+      },
+      "WorldDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WorldSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WorldMember"
+                }
+              },
+              "onlineMembers": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WorldOnlineMember"
+                },
+                "description": "Участники мира, сейчас онлайн на сайте"
+              },
+              "onlineCount": {
+                "type": "integer",
+                "description": "Сколько участников мира онлайн на сайте"
+              }
+            },
+            "required": [
+              "members",
+              "onlineMembers",
+              "onlineCount"
+            ]
+          }
         ]
       },
       "WorldDetailResponse": {
@@ -538,10 +678,416 @@
             "maxLength": 64,
             "description": "Новое название мира",
             "example": "Новое название"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Описание мира (только owner)"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "URL аватарки (только owner)"
+          },
+          "backgroundUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "URL фона (только owner)"
+          }
+        }
+      },
+      "GameSessionSettings": {
+        "type": "object",
+        "properties": {
+          "minPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "requireAllReady": {
+            "type": "boolean"
+          },
+          "allowLateJoin": {
+            "type": "boolean"
+          },
+          "isPrivate": {
+            "type": "boolean"
+          },
+          "autoStartWhenAllReady": {
+            "type": "boolean"
           }
         },
         "required": [
-          "name"
+          "minPlayers",
+          "maxPlayers",
+          "requireAllReady",
+          "allowLateJoin",
+          "isPrivate",
+          "autoStartWhenAllReady"
+        ]
+      },
+      "GameSessionPlayer": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "host",
+              "player"
+            ],
+            "description": "Роль в сессии"
+          },
+          "isReady": {
+            "type": "boolean"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leftAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "avatar": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "username",
+              "avatar"
+            ]
+          }
+        },
+        "required": [
+          "userId",
+          "role",
+          "isReady",
+          "joinedAt",
+          "leftAt",
+          "user"
+        ]
+      },
+      "GameSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "worldId": {
+            "type": "string"
+          },
+          "templateSlug": {
+            "type": "string",
+            "enum": [
+              "quiz",
+              "mafia",
+              "alias",
+              "custom"
+            ],
+            "description": "Тип игры"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lobby",
+              "active",
+              "finished",
+              "cancelled"
+            ],
+            "description": "Статус игровой сессии"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/GameSessionSettings"
+          },
+          "gameConfig": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "hostGraceExpiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "hostAbsent": {
+            "type": "boolean"
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameSessionPlayer"
+            }
+          },
+          "myRole": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "host",
+              "player"
+            ],
+            "description": "Роль в сессии"
+          },
+          "myIsReady": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "worldId",
+          "templateSlug",
+          "templateName",
+          "hostId",
+          "status",
+          "settings",
+          "gameConfig",
+          "createdAt",
+          "startedAt",
+          "finishedAt",
+          "hostGraceExpiresAt",
+          "hostAbsent",
+          "players",
+          "myRole",
+          "myIsReady"
+        ]
+      },
+      "GameSessionResponse": {
+        "type": "object",
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/GameSession"
+          }
+        },
+        "required": [
+          "session"
+        ]
+      },
+      "GameSessionSettingsInput": {
+        "type": "object",
+        "properties": {
+          "minPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "requireAllReady": {
+            "type": "boolean"
+          },
+          "allowLateJoin": {
+            "type": "boolean"
+          },
+          "isPrivate": {
+            "type": "boolean"
+          },
+          "autoStartWhenAllReady": {
+            "type": "boolean"
+          }
+        },
+        "description": "Настройки сессии (перекрывают дефолты шаблона)"
+      },
+      "CreateGameSessionBody": {
+        "type": "object",
+        "properties": {
+          "templateSlug": {
+            "type": "string",
+            "enum": [
+              "quiz",
+              "mafia",
+              "alias",
+              "custom"
+            ],
+            "description": "Шаблон игры",
+            "example": "quiz"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/GameSessionSettingsInput"
+          },
+          "gameConfig": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            },
+            "description": "Конфиг игры (пока пустой объект для не-Quiz)"
+          }
+        },
+        "required": [
+          "templateSlug"
+        ]
+      },
+      "GameSessionListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID сессии"
+          },
+          "templateSlug": {
+            "type": "string",
+            "enum": [
+              "quiz",
+              "mafia",
+              "alias",
+              "custom"
+            ],
+            "description": "Тип игры"
+          },
+          "templateName": {
+            "type": "string",
+            "description": "Название типа игры"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "hostUsername": {
+            "type": "string",
+            "description": "Имя ведущего"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lobby",
+              "active",
+              "finished",
+              "cancelled"
+            ],
+            "description": "Статус игровой сессии"
+          },
+          "playerCount": {
+            "type": "integer",
+            "description": "Игроков в лобби/сессии"
+          },
+          "maxPlayers": {
+            "type": "integer"
+          },
+          "readyCount": {
+            "type": "integer",
+            "description": "Сколько игроков ready"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hostGraceExpiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Когда отменится игра, если ведущий не вернётся"
+          },
+          "hostAbsent": {
+            "type": "boolean",
+            "description": "Ведущий временно отсутствует"
+          },
+          "myRole": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "host",
+              "player"
+            ],
+            "description": "Роль в сессии"
+          },
+          "myIsReady": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "canJoin": {
+            "type": "boolean",
+            "description": "Можно ли войти в лобби (status=lobby, есть места)"
+          },
+          "isParticipant": {
+            "type": "boolean",
+            "description": "Вы уже в этой сессии"
+          }
+        },
+        "required": [
+          "id",
+          "templateSlug",
+          "templateName",
+          "hostId",
+          "hostUsername",
+          "status",
+          "playerCount",
+          "maxPlayers",
+          "readyCount",
+          "createdAt",
+          "hostGraceExpiresAt",
+          "hostAbsent",
+          "myRole",
+          "myIsReady",
+          "canJoin",
+          "isParticipant"
+        ]
+      },
+      "GameSessionListResponse": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameSessionListItem"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "SetReadyBody": {
+        "type": "object",
+        "properties": {
+          "isReady": {
+            "type": "boolean",
+            "description": "Готовность игрока"
+          }
+        },
+        "required": [
+          "isReady"
         ]
       }
     },
@@ -849,10 +1395,26 @@
           "Worlds"
         ],
         "summary": "Мои миры",
-        "description": "Список миров, в которых вы участник.",
+        "description": "Список миров, в которых вы участник. По умолчанию архивные скрыты; `includeArchived=true` — показать с `isArchived: true`.",
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "false",
+              "description": "Включить архивные миры в список"
+            },
+            "required": false,
+            "name": "includeArchived",
+            "in": "query"
           }
         ],
         "responses": {
@@ -954,6 +1516,56 @@
         }
       }
     },
+    "/worlds/leaderboard": {
+      "get": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Топ миров",
+        "description": "Глобальный рейтинг активных миров: xp DESC, level DESC, createdAt ASC.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "description": "Сколько миров вернуть в топе"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Топ миров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldLeaderboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/worlds/{worldId}": {
       "get": {
         "tags": [
@@ -1025,7 +1637,7 @@
           "Worlds"
         ],
         "summary": "Редактировать мир",
-        "description": "Обновление настроек мира. Сейчас доступно только название. Требуется право world.settings.manage (у owner есть автоматически). Статус мира (tier) меняется отдельно — позже через админку.",
+        "description": "Обновление профиля мира. Название — право world.settings.manage. Описание, avatarUrl, backgroundUrl — только owner. Архивный мир редактировать нельзя.",
         "security": [
           {
             "bearerAuth": []
@@ -1094,6 +1706,598 @@
           },
           "404": {
             "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Мир в архиве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Архивировать мир",
+        "description": "Soft delete: мир помечается архивным (`deletedAt`). Открытые игры отменяются. Только owner. Восстановление — POST /worlds/{worldId}/restore.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Мир в архиве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Только владелец",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Мир уже в архиве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/{worldId}/restore": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Восстановить мир из архива",
+        "description": "Снимает архив (`deletedAt = null`). Только owner.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Мир восстановлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Только владелец",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Мир не в архиве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/{worldId}/games": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Создать игровую сессию",
+        "description": "Создаёт сессию в статусе lobby. Требуется право world.games.host. Ведущий автоматически добавляется как готовый участник.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGameSessionBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Сессия создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или настроек",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет права вести игры в мире",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир или шаблон не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Игры в мире",
+        "description": "Список открытых игр в мире (по умолчанию lobby + active). Для входа в лобби используйте canJoin и POST /games/{sessionId}/join.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "lobby",
+                "active",
+                "open"
+              ],
+              "default": "open",
+              "description": "lobby — только сбор игроков; active — только идущие; open — lobby + active (по умолчанию)"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список игровых сессий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Вы не участник мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Получить сессию",
+        "description": "Детали сессии и список активных игроков. Доступно участникам мира.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Данные сессии",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Вы не участник мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Сессия не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}/join": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Вступить в сессию",
+        "description": "Присоединиться к лобби. Идемпотентно для уже активных участников.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Вы в сессии",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Сессия заполнена или нет доступа к миру",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Сессия не в лобби",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}/leave": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Покинуть сессию",
+        "description": "Выход из лобби. Если выходит ведущий — сессия отменяется (cancelled).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Вы вышли из сессии",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Вы не участник сессии",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Сессия не в лобби",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}/ready": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Готовность игрока",
+        "description": "Установить isReady. Ведущий всегда готов и не может снять готовность.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReadyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Готовность обновлена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Сессия не в лобби или ведущий снимает готовность",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}/start": {
+      "post": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Старт игры",
+        "description": "Переводит сессию lobby → active. Только ведущий. Проверяет minPlayers и requireAllReady.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Игра началась",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameSessionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Только ведущий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Не все готовы / мало игроков / не в лобби",
             "content": {
               "application/json": {
                 "schema": {

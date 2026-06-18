@@ -1,6 +1,7 @@
-import { PrismaClient, SiteRole } from '@prisma/client';
+import { GameTemplateSlug, PrismaClient, SiteRole } from '@prisma/client';
 import { config } from 'dotenv';
 
+import { DEFAULT_GAME_SESSION_SETTINGS } from '../src/config/game-session.js';
 import { hashPassword } from '../src/shared/utils/password.js';
 
 config();
@@ -12,6 +13,64 @@ const DEFAULT_ADMIN = {
   email: 'admin@teamworlds.local',
   password: 'Admin123!',
 } as const;
+
+const GAME_TEMPLATES = [
+  {
+    slug: GameTemplateSlug.quiz,
+    name: 'Quiz',
+    description: 'Викторина с раундами и вопросами',
+    minPlayers: 2,
+    maxPlayers: 20,
+  },
+  {
+    slug: GameTemplateSlug.mafia,
+    name: 'Mafia',
+    description: 'Игра «Мафия»',
+    minPlayers: 4,
+    maxPlayers: 16,
+  },
+  {
+    slug: GameTemplateSlug.alias,
+    name: 'Alias',
+    description: 'Игра «Alias» — объясни слова',
+    minPlayers: 2,
+    maxPlayers: 12,
+  },
+  {
+    slug: GameTemplateSlug.custom,
+    name: 'Custom Game',
+    description: 'Своя игра с гибкими правилами',
+    minPlayers: 2,
+    maxPlayers: 30,
+  },
+] as const;
+
+async function seedGameTemplates() {
+  for (const template of GAME_TEMPLATES) {
+    await prisma.gameTemplate.upsert({
+      where: { slug: template.slug },
+      update: {
+        name: template.name,
+        description: template.description,
+        minPlayers: template.minPlayers,
+        maxPlayers: template.maxPlayers,
+        defaultSettings: DEFAULT_GAME_SESSION_SETTINGS,
+        isEnabled: true,
+      },
+      create: {
+        slug: template.slug,
+        name: template.name,
+        description: template.description,
+        minPlayers: template.minPlayers,
+        maxPlayers: template.maxPlayers,
+        defaultSettings: DEFAULT_GAME_SESSION_SETTINGS,
+        isEnabled: true,
+      },
+    });
+  }
+
+  console.log('Game templates ready:', GAME_TEMPLATES.map((t) => t.slug).join(', '));
+}
 
 async function main() {
   const username = process.env.ADMIN_SEED_USERNAME ?? DEFAULT_ADMIN.username;
@@ -41,6 +100,8 @@ async function main() {
     email: user.email,
     siteRole: user.siteRole,
   });
+
+  await seedGameTemplates();
 }
 
 main()

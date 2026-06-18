@@ -4,9 +4,12 @@ import {
   createWorldBodySchema,
   joinWorldBodySchema,
   joinWorldResponseSchema,
+  listWorldLeaderboardQuerySchema,
+  listWorldsQuerySchema,
   updateWorldBodySchema,
   worldDetailResponseSchema,
   worldIdParamsSchema,
+  worldLeaderboardResponseSchema,
   worldListResponseSchema,
   worldResponseSchema,
 } from '../schemas/world.schemas.js';
@@ -106,13 +109,44 @@ openApiRegistry.registerPath({
   path: '/worlds',
   tags: [tag],
   summary: 'Мои миры',
-  description: 'Список миров, в которых вы участник.',
+  description:
+    'Список миров, в которых вы участник. По умолчанию архивные скрыты; `includeArchived=true` — показать с `isArchived: true`.',
   security: [{ bearerAuth: [] }],
+  request: {
+    query: listWorldsQuerySchema,
+  },
   responses: {
     200: {
       description: 'Список миров',
       content: {
         'application/json': { schema: worldListResponseSchema },
+      },
+    },
+    401: {
+      description: 'Не авторизован',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'get',
+  path: '/worlds/leaderboard',
+  tags: [tag],
+  summary: 'Топ миров',
+  description:
+    'Глобальный рейтинг активных миров: xp DESC, level DESC, createdAt ASC.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: listWorldLeaderboardQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Топ миров',
+      content: {
+        'application/json': { schema: worldLeaderboardResponseSchema },
       },
     },
     401: {
@@ -168,7 +202,7 @@ openApiRegistry.registerPath({
   tags: [tag],
   summary: 'Редактировать мир',
   description:
-    'Обновление настроек мира. Сейчас доступно только название. Требуется право world.settings.manage (у owner есть автоматически). Статус мира (tier) меняется отдельно — позже через админку.',
+    'Обновление профиля мира. Название — право world.settings.manage. Описание, avatarUrl, backgroundUrl — только owner. Архивный мир редактировать нельзя.',
   security: [{ bearerAuth: [] }],
   request: {
     params: worldIdParamsSchema,
@@ -205,6 +239,89 @@ openApiRegistry.registerPath({
     },
     404: {
       description: 'Мир не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Мир в архиве',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'delete',
+  path: '/worlds/{worldId}',
+  tags: [tag],
+  summary: 'Архивировать мир',
+  description:
+    'Soft delete: мир помечается архивным (`deletedAt`). Открытые игры отменяются. Только owner. Восстановление — POST /worlds/{worldId}/restore.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: worldIdParamsSchema,
+  },
+  responses: {
+    200: {
+      description: 'Мир в архиве',
+      content: {
+        'application/json': { schema: worldResponseSchema },
+      },
+    },
+    403: {
+      description: 'Только владелец',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    404: {
+      description: 'Мир не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Мир уже в архиве',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'post',
+  path: '/worlds/{worldId}/restore',
+  tags: [tag],
+  summary: 'Восстановить мир из архива',
+  description: 'Снимает архив (`deletedAt = null`). Только owner.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: worldIdParamsSchema,
+  },
+  responses: {
+    200: {
+      description: 'Мир восстановлен',
+      content: {
+        'application/json': { schema: worldResponseSchema },
+      },
+    },
+    403: {
+      description: 'Только владелец',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    404: {
+      description: 'Мир не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Мир не в архиве',
       content: {
         'application/json': { schema: apiErrorSchema },
       },

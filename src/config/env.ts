@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_ACCESS_EXPIRES_IN: z.string().min(1),
   JWT_REFRESH_EXPIRES_IN: z.string().min(1),
+  HOST_GRACE_PERIOD_SECONDS: z.coerce.number().int().positive().default(60),
 });
 
 export type Env = z.infer<typeof envSchema>;
