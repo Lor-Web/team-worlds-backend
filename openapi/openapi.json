@@ -21,6 +21,10 @@
       "description": "Профиль и настройки"
     },
     {
+      "name": "Worlds",
+      "description": "Создание, вступление, список и участники"
+    },
+    {
       "name": "System",
       "description": "Служебные эндпоинты"
     }
@@ -275,6 +279,270 @@
           "timestamp",
           "database"
         ]
+      },
+      "WorldSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID мира"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название"
+          },
+          "inviteCode": {
+            "type": "string",
+            "description": "Код приглашения"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "EXTENDED",
+              "VIP"
+            ],
+            "description": "Статус мира",
+            "example": "STANDARD"
+          },
+          "maxMembers": {
+            "type": "integer",
+            "description": "Максимум участников для текущего статуса"
+          },
+          "ownerId": {
+            "type": "string",
+            "description": "ID владельца"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата создания"
+          },
+          "myRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "description": "Ваша роль в мире"
+          },
+          "memberCount": {
+            "type": "integer",
+            "description": "Текущее число участников"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "inviteCode",
+          "tier",
+          "maxMembers",
+          "ownerId",
+          "createdAt",
+          "myRole",
+          "memberCount"
+        ]
+      },
+      "WorldResponse": {
+        "type": "object",
+        "properties": {
+          "world": {
+            "$ref": "#/components/schemas/WorldSummary"
+          }
+        },
+        "required": [
+          "world"
+        ]
+      },
+      "CreateWorldBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "Название мира",
+            "example": "Наша компания"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "JoinWorldResponse": {
+        "type": "object",
+        "properties": {
+          "world": {
+            "$ref": "#/components/schemas/WorldSummary"
+          }
+        },
+        "required": [
+          "world"
+        ]
+      },
+      "JoinWorldBody": {
+        "type": "object",
+        "properties": {
+          "inviteCode": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 12,
+            "pattern": "^[A-Z0-9]+$",
+            "description": "Код приглашения в мир",
+            "example": "AB12CD34"
+          }
+        },
+        "required": [
+          "inviteCode"
+        ]
+      },
+      "WorldListResponse": {
+        "type": "object",
+        "properties": {
+          "worlds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorldSummary"
+            }
+          }
+        },
+        "required": [
+          "worlds"
+        ]
+      },
+      "WorldMember": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "ID пользователя"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "description": "Роль участника в мире"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "world.members.manage",
+                "world.settings.manage",
+                "world.games.host"
+              ],
+              "description": "Дополнительное право участника (owner имеет все права)"
+            },
+            "description": "Дополнительные права"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата вступления"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicUser"
+          }
+        },
+        "required": [
+          "userId",
+          "role",
+          "permissions",
+          "joinedAt",
+          "user"
+        ]
+      },
+      "WorldDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "inviteCode": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "EXTENDED",
+              "VIP"
+            ],
+            "description": "Статус мира: STANDARD — обычный, EXTENDED — расширенный, VIP — VIP",
+            "example": "STANDARD"
+          },
+          "maxMembers": {
+            "type": "integer"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "myRole": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "description": "Роль участника в мире"
+          },
+          "memberCount": {
+            "type": "integer"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorldMember"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "inviteCode",
+          "tier",
+          "maxMembers",
+          "ownerId",
+          "createdAt",
+          "myRole",
+          "memberCount",
+          "members"
+        ]
+      },
+      "WorldDetailResponse": {
+        "type": "object",
+        "properties": {
+          "world": {
+            "$ref": "#/components/schemas/WorldDetail"
+          }
+        },
+        "required": [
+          "world"
+        ]
+      },
+      "UpdateWorldBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "Новое название мира",
+            "example": "Новое название"
+          }
+        },
+        "required": [
+          "name"
+        ]
       }
     },
     "parameters": {}
@@ -515,6 +783,321 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Создать мир",
+        "description": "Создаёт новый мир. Вы становитесь владельцем (owner). Генерируется уникальный код приглашения.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorldBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Мир создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Мои миры",
+        "description": "Список миров, в которых вы участник.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список миров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/join": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Вступить в мир",
+        "description": "Вступление по коду приглашения. Если вы уже участник — возвращает мир без ошибки.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinWorldBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешное вступление или вы уже в мире",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinWorldResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Достигнут лимит участников для статуса мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Код приглашения не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/{worldId}": {
+      "get": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Детали мира",
+        "description": "Информация о мире и список участников. Доступно только участникам мира.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Детали мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Вы не участник этого мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Редактировать мир",
+        "description": "Обновление настроек мира. Сейчас доступно только название. Требуется право world.settings.manage (у owner есть автоматически). Статус мира (tier) меняется отдельно — позже через админку.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorldBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Мир обновлён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав или вы не участник мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }

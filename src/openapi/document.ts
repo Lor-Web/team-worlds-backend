@@ -6,6 +6,7 @@ import { openApiRegistry } from './registry.js';
 import './paths/auth.paths.js';
 import './paths/users.paths.js';
 import './paths/health.paths.js';
+import './paths/worlds.paths.js';
 
 export function generateOpenApiDocument() {
   const generator = new OpenApiGeneratorV3(openApiRegistry.definitions);
@@ -34,6 +35,7 @@ export function generateOpenApiDocument() {
     tags: [
       { name: 'Authentication', description: 'Регистрация, вход, refresh, выход' },
       { name: 'Users', description: 'Профиль и настройки' },
+      { name: 'Worlds', description: 'Создание, вступление, список и участники' },
       { name: 'System', description: 'Служебные эндпоинты' },
     ],
   });

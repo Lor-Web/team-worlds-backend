@@ -17,6 +17,12 @@ enum WorldMemberRole {
   member
 }
 
+enum WorldTier {
+  STANDARD
+  EXTENDED
+  VIP
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -44,11 +50,12 @@ model RefreshToken {
 }
 
 model World {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   name       String
-  inviteCode String   @unique
+  inviteCode String    @unique
+  tier       WorldTier @default(STANDARD)
   ownerId    String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   owner   User          @relation("WorldOwner", fields: [ownerId], references: [id])
   members WorldMember[]
