@@ -1,7 +1,7 @@
 import { prisma } from '../../shared/db/prisma.js';
 
 export type HealthStatus = {
-  status: 'ok' | 'degraded';
+  status: 'OK' | 'degraded';
   timestamp: string;
   database: 'connected' | 'disconnected';
 };
@@ -12,7 +12,7 @@ export async function getHealthStatus(): Promise<HealthStatus> {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return {
-      status: 'ok',
+      status: 'OK',
       timestamp,
       database: 'connected',
     };
