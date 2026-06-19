@@ -24,6 +24,7 @@ import {
   resolveListStatuses,
 } from './game-sessions.helpers.js';
 import { gameSessionsRepository } from './game-sessions.repository.js';
+import { notificationTriggers } from '../notifications/notification-triggers.js';
 import type {
   CreateGameSessionBody,
   ListWorldGamesQuery,
@@ -117,6 +118,12 @@ export const gameSessionsService = {
     });
 
     await worldGamesBroadcast.gameCreated(worldId, session.id);
+
+    await notificationTriggers.onWorldGameCreated({
+      worldId,
+      sessionId: session.id,
+      hostId: userId,
+    });
 
     return toGameSessionDto(session, userId);
   },

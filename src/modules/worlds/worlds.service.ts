@@ -23,6 +23,7 @@ import {
   type WorldSummaryDto,
 } from './worlds.dto.js';
 import { worldsRepository } from './worlds.repository.js';
+import { notificationTriggers } from '../notifications/notification-triggers.js';
 import type {
   CreateWorldBody,
   JoinWorldBody,
@@ -127,6 +128,19 @@ export const worldsService = {
       });
     }
 
+    return this.joinWorldById(userId, world.id);
+  },
+
+  async joinWorldById(userId: string, worldId: string): Promise<WorldSummaryDto> {
+    const world = await worldsRepository.findById(worldId);
+
+    if (!world) {
+      throw new AppError('Мир не найден', {
+        statusCode: 404,
+        code: 'WORLD_NOT_FOUND',
+      });
+    }
+
     assertWorldNotArchived(world, 'Нельзя вступить в архивный мир');
 
     const existingMembership = await worldsRepository.findMembership(userId, world.id);
@@ -147,6 +161,11 @@ export const worldsService = {
     });
 
     await worldProgressionService.awardXpForActivity(world.id, WorldXpActivity.MEMBER_JOINED);
+
+    await notificationTriggers.onWorldMemberJoined({
+      worldId: world.id,
+      joinerId: userId,
+    });
 
     const updatedWorld = await worldsRepository.findById(world.id);
     const updatedMemberCount = memberCount + 1;
@@ -284,6 +303,8 @@ export const worldsService = {
     const archivedWorld = await worldsRepository.softDeleteWorld(worldId);
     const memberCount = await worldsRepository.countMembers(worldId);
     const totalWorlds = await worldsRepository.countActiveWorlds();
+
+    await notificationTriggers.onWorldArchived({ worldId });
 
     return toWorldSummaryDto(archivedWorld, membership.role, memberCount, {
       rank: null,

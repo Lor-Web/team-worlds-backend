@@ -4,6 +4,7 @@ import { authenticate } from '../../shared/middleware/auth.middleware.js';
 import { validate } from '../../shared/middleware/validate.middleware.js';
 import { createGameSessionBodySchema, listWorldGamesQuerySchema } from '../games/game-sessions.validators.js';
 import { gameSessionsController } from '../games/game-sessions.controller.js';
+import { worldInviteCreationRoutes } from '../world-invites/world-invites.routes.js';
 import { worldsController } from './worlds.controller.js';
 import {
   createWorldBodySchema,
@@ -73,3 +74,5 @@ worldsRoutes.post(
   validate({ params: worldIdParamsSchema }),
   worldsController.restoreWorld,
 );
+
+worldsRoutes.use('/:worldId/invites', worldInviteCreationRoutes);

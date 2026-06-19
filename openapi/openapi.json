@@ -25,8 +25,16 @@
       "description": "Создание, вступление, список и участники"
     },
     {
+      "name": "World Invites",
+      "description": "Приглашения пользователей в мир"
+    },
+    {
       "name": "Games",
       "description": "Игровые сессии и lifecycle лобби"
+    },
+    {
+      "name": "Notifications",
+      "description": "In-app уведомления пользователя"
     },
     {
       "name": "System",
@@ -251,6 +259,63 @@
         },
         "required": [
           "user"
+        ]
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID пользователя"
+          },
+          "username": {
+            "type": "string",
+            "description": "Имя пользователя"
+          },
+          "avatar": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL аватара"
+          },
+          "siteRole": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "description": "Роль пользователя на сайте"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата регистрации (ISO 8601)"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatar",
+          "siteRole",
+          "createdAt"
+        ]
+      },
+      "UserSearchListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserProfile"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "users",
+          "nextCursor"
         ]
       },
       "HealthStatus": {
@@ -696,6 +761,117 @@
           }
         }
       },
+      "WorldInvite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "worldId": {
+            "type": "string"
+          },
+          "worldName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "declined",
+              "expired"
+            ],
+            "description": "Статус приглашения в мир"
+          },
+          "inviter": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "inviteeId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "respondedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "worldId",
+          "worldName",
+          "status",
+          "inviter",
+          "inviteeId",
+          "expiresAt",
+          "createdAt",
+          "respondedAt"
+        ]
+      },
+      "WorldInviteResponse": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "$ref": "#/components/schemas/WorldInvite"
+          }
+        },
+        "required": [
+          "invite"
+        ]
+      },
+      "CreateWorldInviteBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "cuid"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "WorldInviteListResponse": {
+        "type": "object",
+        "properties": {
+          "invites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorldInvite"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "invites",
+          "nextCursor"
+        ]
+      },
+      "AcceptWorldInviteResponse": {
+        "type": "object",
+        "properties": {
+          "invite": {
+            "$ref": "#/components/schemas/WorldInvite"
+          },
+          "world": {
+            "$ref": "#/components/schemas/WorldSummary"
+          }
+        },
+        "required": [
+          "invite",
+          "world"
+        ]
+      },
       "GameSessionSettings": {
         "type": "object",
         "properties": {
@@ -1089,6 +1265,184 @@
         "required": [
           "isReady"
         ]
+      },
+      "NotificationPayload": {
+        "type": "object",
+        "properties": {
+          "worldId": {
+            "type": "string"
+          },
+          "worldName": {
+            "type": "string"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "templateSlug": {
+            "type": "string"
+          },
+          "actorUserId": {
+            "type": "string"
+          },
+          "actorUsername": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "stageName": {
+            "type": "string"
+          },
+          "inviteId": {
+            "type": "string"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORLD_GAME_CREATED",
+              "WORLD_MEMBER_JOINED",
+              "WORLD_PROGRESSION",
+              "WORLD_INVITE",
+              "GAME_INVITE",
+              "WORLD_ARCHIVED"
+            ],
+            "description": "Тип уведомления"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/NotificationPayload"
+          },
+          "readAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "body",
+          "payload",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "notifications",
+          "nextCursor"
+        ]
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unreadCount"
+        ]
+      },
+      "MarkReadResponse": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Notification"
+              },
+              {
+                "nullable": true,
+                "description": "null — уведомление уже удалено или не найдено (идемпотентный успех)"
+              }
+            ]
+          },
+          "unreadCount": {
+            "type": "integer",
+            "description": "Актуальное число непрочитанных"
+          }
+        },
+        "required": [
+          "notification",
+          "unreadCount"
+        ]
+      },
+      "MarkAllReadResponse": {
+        "type": "object",
+        "properties": {
+          "markedCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "markedCount"
+        ]
+      },
+      "ClearAllNotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "deletedCount": {
+            "type": "integer"
+          },
+          "unreadCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deletedCount",
+          "unreadCount"
+        ]
+      },
+      "DeleteNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "description": "false — уведомление уже удалено (идемпотентный успех)"
+          },
+          "unreadCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deleted",
+          "unreadCount"
+        ]
       }
     },
     "parameters": {}
@@ -1294,6 +1648,86 @@
           },
           "404": {
             "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/search": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Поиск пользователей",
+        "description": "Поиск по username (подстрока, без учёта регистра). Доступен любому авторизованному пользователю. Из результатов исключается только текущий пользователь. Email не возвращается.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 50,
+              "description": "Строка поиска по username (без учёта регистра, подстрока)"
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "description": "Размер страницы"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Курсор следующей страницы из предыдущего ответа"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Страница результатов поиска",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSearchListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
             "content": {
               "application/json": {
                 "schema": {
@@ -1859,6 +2293,330 @@
         }
       }
     },
+    "/worlds/{worldId}/invites": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Пригласить пользователя в мир",
+        "description": "Создаёт или обновляет pending-приглашение (TTL 7 дней). Доступ: owner или право `world.members.manage`. Если пользователь уже в мире — 409.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorldInviteBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Приглашение создано или обновлено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldInviteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или нельзя пригласить себя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет прав в мире",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир или пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Пользователь уже участник мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/world-invites/incoming": {
+      "get": {
+        "tags": [
+          "World Invites"
+        ],
+        "summary": "Входящие приглашения в мир",
+        "description": "Список приглашений для текущего пользователя. По умолчанию — только pending и не истёкшие.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "declined",
+                "expired"
+              ],
+              "default": "pending",
+              "description": "Фильтр по статусу (по умолчанию pending)"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "description": "Размер страницы"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Курсор следующей страницы из предыдущего ответа"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Страница входящих приглашений",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldInviteListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/world-invites/{inviteId}/accept": {
+      "post": {
+        "tags": [
+          "World Invites"
+        ],
+        "summary": "Принять приглашение в мир",
+        "description": "Вступление в мир по приглашению. Автоматически добавляет пользователя как member.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "inviteId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Приглашение принято, пользователь в мире",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptWorldInviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Приглашение адресовано другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Приглашение не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Приглашение уже обработано, истекло или пользователь уже в мире",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/world-invites/{inviteId}/decline": {
+      "post": {
+        "tags": [
+          "World Invites"
+        ],
+        "summary": "Отклонить приглашение в мир",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "inviteId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Приглашение отклонено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldInviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Приглашение адресовано другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Приглашение не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Приглашение уже обработано или истекло",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/worlds/{worldId}/games": {
       "post": {
         "tags": [
@@ -2298,6 +3056,253 @@
           },
           "409": {
             "description": "Не все готовы / мало игроков / не в лобби",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Лента уведомлений",
+        "description": "Пагинация cursor-based. Новые сверху.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "description": "Размер страницы"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Курсор следующей страницы из предыдущего ответа"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Страница уведомлений",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Очистить все уведомления",
+        "description": "Удаляет всю ленту пользователя. Через socket приходит `notification:deleted` с `clearedAll: true`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Лента очищена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearAllNotificationsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Число непрочитанных",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Badge для колокольчика",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{notificationId}/read": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Прочитать уведомление",
+        "description": "Идемпотентно: если уведомление уже удалено (например, после accept/decline приглашения), возвращает `notification: null` и актуальный `unreadCount`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "notificationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Уведомление прочитано или уже отсутствует",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkReadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/read-all": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Прочитать все",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Все помечены прочитанными",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAllReadResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{notificationId}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Удалить уведомление",
+        "description": "Идемпотентно: если уведомление уже удалено, возвращает `deleted: false`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "notificationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Уведомление удалено или уже отсутствует",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteNotificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
             "content": {
               "application/json": {
                 "schema": {

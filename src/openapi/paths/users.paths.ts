@@ -1,6 +1,10 @@
 import { openApiRegistry } from '../registry.js';
-import { apiErrorSchema } from '../schemas/common.schemas.js';
-import { userResponseSchema } from '../schemas/user.schemas.js';
+import { apiErrorSchema, validationErrorSchema } from '../schemas/common.schemas.js';
+import {
+  searchUsersQuerySchema,
+  userResponseSchema,
+  userSearchListResponseSchema,
+} from '../schemas/user.schemas.js';
 
 openApiRegistry.registerPath({
   method: 'get',
@@ -24,6 +28,39 @@ openApiRegistry.registerPath({
     },
     404: {
       description: 'Пользователь не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'get',
+  path: '/users/search',
+  tags: ['Users'],
+  summary: 'Поиск пользователей',
+  description:
+    'Поиск по username (подстрока, без учёта регистра). Доступен любому авторизованному пользователю. Из результатов исключается только текущий пользователь. Email не возвращается.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: searchUsersQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Страница результатов поиска',
+      content: {
+        'application/json': { schema: userSearchListResponseSchema },
+      },
+    },
+    400: {
+      description: 'Ошибка валидации',
+      content: {
+        'application/json': { schema: validationErrorSchema },
+      },
+    },
+    401: {
+      description: 'Не авторизован',
       content: {
         'application/json': { schema: apiErrorSchema },
       },

@@ -6,6 +6,7 @@ import {
   type WorldXpActivityCode,
 } from '../../config/world-xp-rewards.js';
 import { resolveWorldProgressionFields } from '../../config/world-progression.js';
+import { notificationTriggers } from '../notifications/notification-triggers.js';
 import { worldsRepository } from './worlds.repository.js';
 
 export const worldProgressionService = {
@@ -28,6 +29,8 @@ export const worldProgressionService = {
       return;
     }
 
+    const previousLevel = world.level;
+    const previousStage = world.stage;
     const xp = world.xp + amount;
     const progression = resolveWorldProgressionFields(xp);
 
@@ -35,6 +38,14 @@ export const worldProgressionService = {
       xp,
       level: progression.level,
       stage: progression.stage,
+    });
+
+    await notificationTriggers.onWorldProgression({
+      worldId,
+      previousLevel,
+      previousStage,
+      newLevel: progression.level,
+      newStage: progression.stage,
     });
   },
 };

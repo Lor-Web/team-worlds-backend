@@ -179,6 +179,18 @@ export const worldsRepository = {
     }).then((rows) => rows.map((row) => row.user));
   },
 
+  listMemberUserIds(worldId: string, excludeUserIds: string[] = []): Promise<string[]> {
+    return prisma.worldMember
+      .findMany({
+        where: {
+          worldId,
+          userId: excludeUserIds.length > 0 ? { notIn: excludeUserIds } : undefined,
+        },
+        select: { userId: true },
+      })
+      .then((rows) => rows.map((row) => row.userId));
+  },
+
   listWorldIdsForUser(userId: string): Promise<string[]> {
     return prisma.worldMember
       .findMany({

@@ -2,6 +2,7 @@ import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
 
 import { env } from '../config/env.js';
+import { registerUserNotificationHandlers } from '../modules/notifications/socket/user-notifications.handlers.js';
 import { registerGameLobbyHandlers } from '../modules/games/socket/game-lobby.handlers.js';
 import { registerWorldGamesHandlers } from '../modules/worlds/socket/world-games.handlers.js';
 import { registerPresenceHandlers } from './presence.handlers.js';
@@ -21,6 +22,7 @@ export function initSocketServer(httpServer: HttpServer): Server {
   registerWorldGamesHandlers(io);
   registerGameLobbyHandlers(io);
   registerPresenceHandlers(io);
+  registerUserNotificationHandlers(io);
 
   return io;
 }

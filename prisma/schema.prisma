@@ -50,6 +50,22 @@ enum GameTemplateSlug {
   custom
 }
 
+enum NotificationType {
+  WORLD_GAME_CREATED
+  WORLD_MEMBER_JOINED
+  WORLD_PROGRESSION
+  WORLD_INVITE
+  GAME_INVITE
+  WORLD_ARCHIVED
+}
+
+enum WorldInviteStatus {
+  pending
+  accepted
+  declined
+  expired
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -64,6 +80,9 @@ model User {
   memberships   WorldMember[]
   hostedSessions GameSession[]      @relation("GameSessionHost")
   gamePlayers    GameSessionPlayer[]
+  notifications  Notification[]
+  worldInvitesSent     WorldInvite[] @relation("WorldInviteInviter")
+  worldInvitesReceived WorldInvite[] @relation("WorldInviteInvitee")
 }
 
 model RefreshToken {
@@ -96,6 +115,7 @@ model World {
   owner        User          @relation("WorldOwner", fields: [ownerId], references: [id])
   members      WorldMember[]
   gameSessions GameSession[]
+  invites      WorldInvite[]
 }
 
 model WorldMember {
@@ -163,4 +183,39 @@ model GameSessionPlayer {
 
   @@id([gameSessionId, userId])
   @@index([userId])
+}
+
+model WorldInvite {
+  id          String            @id @default(cuid())
+  worldId     String
+  inviterId   String
+  inviteeId   String
+  status      WorldInviteStatus @default(pending)
+  expiresAt   DateTime
+  createdAt   DateTime          @default(now())
+  respondedAt DateTime?
+
+  world   World @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  inviter User  @relation("WorldInviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee User  @relation("WorldInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  @@unique([worldId, inviteeId])
+  @@index([inviteeId, status])
+  @@index([worldId, status])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  payload   Json             @default("{}")
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
