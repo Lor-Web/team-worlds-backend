@@ -1,0 +1,17 @@
+[Unit]
+Description=Team Worlds Backend API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/var/www/team-worlds/backend
+EnvironmentFile=/var/www/team-worlds/backend/.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

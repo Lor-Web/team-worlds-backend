@@ -16,6 +16,10 @@ import { errorHandler } from './shared/errors/errorHandler.js';
 export function createApp() {
   const app = express();
 
+  if (env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   app.use(
     cors({
       origin: env.CORS_ORIGIN,
