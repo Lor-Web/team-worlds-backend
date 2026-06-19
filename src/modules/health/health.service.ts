@@ -4,8 +4,6 @@ export type HealthStatus = {
   status: 'ok' | 'degraded';
   timestamp: string;
   database: 'connected' | 'disconnected';
-  deployTest: 'v2',  // убрать после теста
-
 };
 
 export async function getHealthStatus(): Promise<HealthStatus> {
@@ -17,15 +15,12 @@ export async function getHealthStatus(): Promise<HealthStatus> {
       status: 'ok',
       timestamp,
       database: 'connected',
-      deployTest: 'v2',  // убрать после теста
-
     };
   } catch {
     return {
       status: 'degraded',
       timestamp,
       database: 'disconnected',
-      deployTest: 'v2',  // убрать после теста
     };
   }
 }
