@@ -63,6 +63,14 @@ export const worldsRepository = {
     });
   },
 
+  deleteMembership(userId: string, worldId: string) {
+    return prisma.worldMember.delete({
+      where: {
+        userId_worldId: { userId, worldId },
+      },
+    });
+  },
+
   findMembership(userId: string, worldId: string) {
     return prisma.worldMember.findUnique({
       where: {
@@ -202,6 +210,39 @@ export const worldsRepository = {
 
   countActiveWorlds(): Promise<number> {
     return prisma.world.count({ where: { deletedAt: null } });
+  },
+
+  hasActiveGameParticipation(userId: string, worldId: string): Promise<boolean> {
+    return prisma.gameSessionPlayer
+      .findFirst({
+        where: {
+          userId,
+          leftAt: null,
+          session: { worldId, status: 'active' },
+        },
+        select: { userId: true },
+      })
+      .then((row) => row !== null);
+  },
+
+  listLobbyParticipations(userId: string, worldId: string) {
+    return prisma.gameSessionPlayer.findMany({
+      where: {
+        userId,
+        leftAt: null,
+        session: { worldId, status: 'lobby' },
+      },
+      include: {
+        session: { select: { id: true, hostId: true, worldId: true } },
+      },
+    });
+  },
+
+  expirePendingInvitesForUser(worldId: string, userId: string) {
+    return prisma.worldInvite.updateMany({
+      where: { worldId, inviteeId: userId, status: 'pending' },
+      data: { status: 'declined', respondedAt: new Date() },
+    });
   },
 
   listActiveWorldsForRanking() {

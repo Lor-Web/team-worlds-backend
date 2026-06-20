@@ -42,6 +42,8 @@ Total XP для уровня L: `50 * L * (L - 1)` (L ≥ 1).
 | PATCH | `/worlds/:id` | owner/settings | Профиль |
 | DELETE | `/worlds/:id` | owner | Архивировать |
 | POST | `/worlds/:id/restore` | owner | Восстановить |
+| POST | `/worlds/:id/leave` | member | Покинуть мир (owner — нельзя) |
+| DELETE | `/worlds/:id/members/:userId` | owner | Исключить участника |
 
 ### PATCH body (хотя бы одно поле)
 

@@ -13,6 +13,7 @@ import {
   listWorldsQuerySchema,
   updateWorldBodySchema,
   worldIdParamsSchema,
+  worldMemberParamsSchema,
 } from './worlds.validators.js';
 
 export const worldsRoutes = Router();
@@ -73,6 +74,18 @@ worldsRoutes.post(
   '/:worldId/restore',
   validate({ params: worldIdParamsSchema }),
   worldsController.restoreWorld,
+);
+
+worldsRoutes.post(
+  '/:worldId/leave',
+  validate({ params: worldIdParamsSchema }),
+  worldsController.leaveWorld,
+);
+
+worldsRoutes.delete(
+  '/:worldId/members/:userId',
+  validate({ params: worldMemberParamsSchema }),
+  worldsController.kickMember,
 );
 
 worldsRoutes.use('/:worldId/invites', worldInviteCreationRoutes);

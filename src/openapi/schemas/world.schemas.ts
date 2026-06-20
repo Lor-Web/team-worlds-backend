@@ -79,6 +79,12 @@ export const worldIdParamsSchema = z
   })
   .openapi('WorldIdParams');
 
+export const worldMemberParamsSchema = worldIdParamsSchema
+  .extend({
+    userId: z.string().cuid('Некорректный ID пользователя'),
+  })
+  .openapi('WorldMemberParams');
+
 export const listWorldsQuerySchema = z
   .object({
     includeArchived: z
