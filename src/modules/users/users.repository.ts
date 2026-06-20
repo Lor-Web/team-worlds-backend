@@ -31,25 +31,25 @@ export const usersRepository = {
 
     if (input.cursor) {
       return prisma.$queryRaw<UserSearchRow[]>`
-        SELECT id, username, avatar, siteRole, createdAt
-        FROM User
-        WHERE id != ${input.excludeUserId}
-          AND lower(username) LIKE lower(${likePattern}) ESCAPE '\\'
+        SELECT "id", "username", "avatar", "siteRole", "createdAt"
+        FROM "User"
+        WHERE "id" != ${input.excludeUserId}
+          AND lower("username") LIKE lower(${likePattern}) ESCAPE '\\'
           AND (
-            username > ${input.cursor.username}
-            OR (username = ${input.cursor.username} AND id > ${input.cursor.id})
+            "username" > ${input.cursor.username}
+            OR ("username" = ${input.cursor.username} AND "id" > ${input.cursor.id})
           )
-        ORDER BY username ASC, id ASC
+        ORDER BY "username" ASC, "id" ASC
         LIMIT ${input.limit + 1}
       `;
     }
 
     return prisma.$queryRaw<UserSearchRow[]>`
-      SELECT id, username, avatar, siteRole, createdAt
-      FROM User
-      WHERE id != ${input.excludeUserId}
-        AND lower(username) LIKE lower(${likePattern}) ESCAPE '\\'
-      ORDER BY username ASC, id ASC
+      SELECT "id", "username", "avatar", "siteRole", "createdAt"
+      FROM "User"
+      WHERE "id" != ${input.excludeUserId}
+        AND lower("username") LIKE lower(${likePattern}) ESCAPE '\\'
+      ORDER BY "username" ASC, "id" ASC
       LIMIT ${input.limit + 1}
     `;
   },

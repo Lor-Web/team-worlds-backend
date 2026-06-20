@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 
+import { corsOrigins } from './config/corsOrigins.js';
 import { env } from './config/env.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
@@ -22,7 +23,7 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
       credentials: true,
     }),
   );

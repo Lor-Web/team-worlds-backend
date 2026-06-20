@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
 
-import { env } from '../config/env.js';
+import { corsOrigins } from '../config/corsOrigins.js';
 import { registerUserNotificationHandlers } from '../modules/notifications/socket/user-notifications.handlers.js';
 import { registerGameLobbyHandlers } from '../modules/games/socket/game-lobby.handlers.js';
 import { registerWorldGamesHandlers } from '../modules/worlds/socket/world-games.handlers.js';
@@ -13,7 +13,7 @@ let io: Server | null = null;
 export function initSocketServer(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
     cors: {
-      origin: env.CORS_ORIGIN,
+      origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
       credentials: true,
     },
   });
