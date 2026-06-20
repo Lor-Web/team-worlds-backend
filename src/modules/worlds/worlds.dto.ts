@@ -44,6 +44,7 @@ export type WorldMemberDto = {
   userId: string;
   role: WorldMemberRole;
   permissions: string[];
+  rating: number;
   joinedAt: string;
   user: ReturnType<typeof toPublicUserDto>;
 };
@@ -164,6 +165,7 @@ export function toWorldMemberDto(
     userId: member.userId,
     role: member.role,
     permissions: parseWorldPermissions(member.permissions),
+    rating: member.rating,
     joinedAt: member.joinedAt.toISOString(),
     user: toPublicUserDto(member.user),
   };

@@ -195,6 +195,11 @@ export const worldMemberSchema = z
     permissions: z
       .array(worldPermissionSchema)
       .openapi({ description: 'Дополнительные права' }),
+    rating: z
+      .number()
+      .int()
+      .min(0)
+      .openapi({ description: 'Рейтинг участника в мире (не ниже 0)' }),
     joinedAt: z.string().datetime().openapi({ description: 'Дата вступления' }),
     user: publicUserSchema,
   })

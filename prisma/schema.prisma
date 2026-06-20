@@ -83,6 +83,7 @@ model User {
   notifications  Notification[]
   worldInvitesSent     WorldInvite[] @relation("WorldInviteInviter")
   worldInvitesReceived WorldInvite[] @relation("WorldInviteInvitee")
+  quizTemplatesCreated QuizTemplate[] @relation("QuizTemplateCreator")
 }
 
 model RefreshToken {
@@ -116,6 +117,7 @@ model World {
   members      WorldMember[]
   gameSessions GameSession[]
   invites      WorldInvite[]
+  quizTemplates QuizTemplate[]
 }
 
 model WorldMember {
@@ -123,6 +125,7 @@ model WorldMember {
   worldId     String
   role        WorldMemberRole @default(member)
   permissions Json            @default("[]")
+  rating      Int             @default(0)
   joinedAt    DateTime        @default(now())
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -143,6 +146,63 @@ model GameTemplate {
   createdAt       DateTime         @default(now())
 
   sessions GameSession[]
+}
+
+model QuizTemplate {
+  id          String   @id @default(cuid())
+  worldId     String
+  name        String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  world     World       @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  createdBy User        @relation("QuizTemplateCreator", fields: [createdById], references: [id])
+  rounds    QuizRound[]
+
+  @@index([worldId, updatedAt])
+}
+
+model QuizRound {
+  id               String  @id @default(cuid())
+  templateId       String
+  order            Int
+  customName       String?
+  description      String  @default("")
+  isDoublePoints   Boolean @default(false)
+  preRoundDelaySec Int
+  questionTimeSec  Int
+
+  template  QuizTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+
+  @@unique([templateId, order])
+}
+
+model QuizQuestion {
+  id       String  @id @default(cuid())
+  roundId  String
+  order    Int
+  text     String?
+  imageUrl String?
+  videoUrl String?
+
+  round   QuizRound    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  answers QuizAnswer[]
+
+  @@unique([roundId, order])
+}
+
+model QuizAnswer {
+  id         String  @id @default(cuid())
+  questionId String
+  order      Int
+  text       String
+  isCorrect  Boolean @default(false)
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, order])
 }
 
 model GameSession {

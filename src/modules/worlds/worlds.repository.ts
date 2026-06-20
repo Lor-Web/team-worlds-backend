@@ -281,6 +281,33 @@ export const worldsRepository = {
     return ahead + 1;
   },
 
+  adjustMemberRating(userId: string, worldId: string, delta: number) {
+    return prisma.$executeRaw`
+      UPDATE "WorldMember"
+      SET "rating" = GREATEST(0, "rating" + ${delta})
+      WHERE "userId" = ${userId} AND "worldId" = ${worldId}
+    `;
+  },
+
+  adjustMemberRatings(
+    worldId: string,
+    changes: Array<{ userId: string; delta: number }>,
+  ) {
+    if (changes.length === 0) {
+      return Promise.resolve();
+    }
+
+    return prisma.$transaction(
+      changes.map(({ userId, delta }) =>
+        prisma.$executeRaw`
+          UPDATE "WorldMember"
+          SET "rating" = GREATEST(0, "rating" + ${delta})
+          WHERE "userId" = ${userId} AND "worldId" = ${worldId}
+        `,
+      ),
+    );
+  },
+
   listLeaderboard(limit: number) {
     return prisma.world.findMany({
       where: { deletedAt: null },

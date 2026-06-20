@@ -8,6 +8,7 @@ import './paths/users.paths.js';
 import './paths/health.paths.js';
 import './paths/worlds.paths.js';
 import './paths/world-invites.paths.js';
+import './paths/quiz-templates.paths.js';
 import './paths/game-sessions.paths.js';
 import './paths/notifications.paths.js';
 
@@ -40,6 +41,7 @@ export function generateOpenApiDocument() {
       { name: 'Users', description: 'Профиль и настройки' },
       { name: 'Worlds', description: 'Создание, вступление, список и участники' },
       { name: 'World Invites', description: 'Приглашения пользователей в мир' },
+      { name: 'Quiz Templates', description: 'Контентные шаблоны квиза в мире' },
       { name: 'Games', description: 'Игровые сессии и lifecycle лобби' },
       { name: 'Notifications', description: 'In-app уведомления пользователя' },
       { name: 'System', description: 'Служебные эндпоинты' },

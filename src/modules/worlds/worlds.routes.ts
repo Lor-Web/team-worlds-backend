@@ -5,6 +5,7 @@ import { validate } from '../../shared/middleware/validate.middleware.js';
 import { createGameSessionBodySchema, listWorldGamesQuerySchema } from '../games/game-sessions.validators.js';
 import { gameSessionsController } from '../games/game-sessions.controller.js';
 import { worldInviteCreationRoutes } from '../world-invites/world-invites.routes.js';
+import { quizTemplateRoutes } from '../quiz-templates/quiz-templates.routes.js';
 import { worldsController } from './worlds.controller.js';
 import {
   createWorldBodySchema,
@@ -45,6 +46,8 @@ worldsRoutes.get(
   validate({ params: worldIdParamsSchema, query: listWorldGamesQuerySchema }),
   gameSessionsController.listWorldSessions,
 );
+
+worldsRoutes.use('/:worldId/quiz-templates', quizTemplateRoutes);
 
 worldsRoutes.post(
   '/:worldId/games',

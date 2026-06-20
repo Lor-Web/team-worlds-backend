@@ -74,7 +74,7 @@ Total XP для уровня L: `50 * L * (L - 1)` (L ≥ 1).
 |------------|-----|
 | MEMBER_JOINED | 5 |
 | GAME_STARTED | 10 |
-| GAME_FINISHED | 15 (когда будет finish flow) |
+| GAME_FINISHED | 20 (при завершении игры) |
 
 ## Рейтинг (этап 5)
 

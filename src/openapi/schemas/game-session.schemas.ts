@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import '../setup.js';
+import { quizLobbyInputSchema } from './quiz-game.schemas.js';
 
 export const gameTemplateSlugSchema = z
   .enum(['quiz', 'mafia', 'alias', 'custom'])
@@ -34,8 +35,19 @@ export const gameSessionSettingsInputSchema = gameSessionSettingsSchema
 export const createGameSessionBodySchema = z
   .object({
     templateSlug: gameTemplateSlugSchema.openapi({
-      description: 'Шаблон игры',
+      description: 'Тип игры',
       example: 'quiz',
+    }),
+    quizTemplateId: z
+      .string()
+      .cuid('Некорректный ID шаблона квиза')
+      .optional()
+      .openapi({
+        description: 'Обязателен для templateSlug=quiz — шаблон квиза мира',
+      }),
+    quizLobby: quizLobbyInputSchema.optional().openapi({
+      description:
+        'Обязателен для templateSlug=quiz — solo или teams (+ teamCount). Задаётся при создании, не меняется.',
     }),
     settings: gameSessionSettingsInputSchema.optional().openapi({
       description: 'Настройки сессии (перекрывают дефолты шаблона)',
@@ -43,7 +55,42 @@ export const createGameSessionBodySchema = z
     gameConfig: z
       .record(z.unknown())
       .optional()
-      .openapi({ description: 'Конфиг игры (пока пустой объект для не-Quiz)' }),
+      .openapi({
+        description: 'Конфиг игры (только для не-quiz; для quiz строится на сервере)',
+      }),
+  })
+  .superRefine((body, ctx) => {
+    if (body.templateSlug === 'quiz' && !body.quizTemplateId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['quizTemplateId'],
+        message: 'Укажите quizTemplateId для игры типа quiz',
+      });
+    }
+
+    if (body.templateSlug === 'quiz' && !body.quizLobby) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['quizLobby'],
+        message: 'Укажите quizLobby для игры типа quiz',
+      });
+    }
+
+    if (body.templateSlug !== 'quiz' && body.quizLobby) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['quizLobby'],
+        message: 'quizLobby допустим только для quiz',
+      });
+    }
+
+    if (body.templateSlug !== 'quiz' && body.quizTemplateId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['quizTemplateId'],
+        message: 'quizTemplateId допустим только для quiz',
+      });
+    }
   })
   .openapi('CreateGameSessionBody');
 
@@ -138,6 +185,10 @@ export const gameSessionListItemSchema = z
       .boolean()
       .openapi({ description: 'Можно ли войти в лобби (status=lobby, есть места)' }),
     isParticipant: z.boolean().openapi({ description: 'Вы уже в этой сессии' }),
+    quizTemplateName: z
+      .string()
+      .nullable()
+      .openapi({ description: 'Название шаблона квиза (если quiz)' }),
   })
   .openapi('GameSessionListItem');
 
