@@ -13,7 +13,29 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Create deployment archive
+        run: tar czf deploy.tar.gz dist package.json package-lock.json prisma
+
+      - name: Upload build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: deploy.tar.gz
+          target: /var/www/team-worlds/backend
+
+      - name: Install and restart on server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -22,10 +44,10 @@ jobs:
           script: |
             set -euo pipefail
             cd /var/www/team-worlds/backend
-            git fetch origin main
-            git reset --hard origin/main
-            npm ci
-            npm run build
+            tar xzf deploy.tar.gz
+            rm -f deploy.tar.gz
+            npm ci --omit=dev
+            npx prisma generate
             npm run db:migrate:deploy
             sudo systemctl restart team-worlds-backend
 
