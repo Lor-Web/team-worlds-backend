@@ -7,6 +7,7 @@ import type {
 
 import { gameSessionSettingsSchema } from '../../openapi/schemas/game-session.schemas.js';
 import { DEFAULT_GAME_SESSION_SETTINGS } from '../../config/game-session.js';
+import { sanitizeQuizGameConfigForClient } from '../quiz-game/quiz-game.config.js';
 
 export type GameSessionPlayerDto = {
   userId: string;
@@ -38,6 +39,7 @@ export type GameSessionListItemDto = {
   myIsReady: boolean | null;
   canJoin: boolean;
   isParticipant: boolean;
+  quizTemplateName: string | null;
 };
 
 export type GameSessionDto = {
@@ -83,6 +85,18 @@ export function parseGameConfig(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function getQuizTemplateName(gameConfig: unknown): string | null {
+  const config = parseGameConfig(gameConfig);
+  const snapshot = config.quizSnapshot;
+
+  if (typeof snapshot !== 'object' || snapshot === null || Array.isArray(snapshot)) {
+    return null;
+  }
+
+  const name = (snapshot as { name?: unknown }).name;
+  return typeof name === 'string' ? name : null;
+}
+
 function toGameSessionPlayerDto(
   player: GameSessionPlayer & { user: SessionPlayerUser },
 ): GameSessionPlayerDto {
@@ -122,7 +136,11 @@ export function toGameSessionDto(
     hostId: session.hostId,
     status: session.status,
     settings: parseSessionSettings(session.settings),
-    gameConfig: parseGameConfig(session.gameConfig),
+    gameConfig: sanitizeQuizGameConfigForClient(
+      parseGameConfig(session.gameConfig),
+      session.status,
+      session.template.slug,
+    ),
     createdAt: session.createdAt.toISOString(),
     startedAt: session.startedAt?.toISOString() ?? null,
     finishedAt: session.finishedAt?.toISOString() ?? null,
@@ -157,6 +175,7 @@ type SessionListRow = GameSession & {
   template: Pick<GameTemplate, 'slug' | 'name'>;
   host: Pick<User, 'id' | 'username'>;
   players: Array<Pick<GameSessionPlayer, 'userId' | 'role' | 'isReady' | 'leftAt'>>;
+  gameConfig: unknown;
 };
 
 export function toGameSessionListItemDto(
@@ -191,5 +210,6 @@ export function toGameSessionListItemDto(
     myIsReady: isParticipant && myPlayer ? myPlayer.isReady : null,
     canJoin,
     isParticipant,
+    quizTemplateName: getQuizTemplateName(session.gameConfig),
   };
 }

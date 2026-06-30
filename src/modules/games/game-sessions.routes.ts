@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.middleware.js';
 import { validate } from '../../shared/middleware/validate.middleware.js';
 import { gameSessionsController } from './game-sessions.controller.js';
+import { quizGameController } from '../quiz-game/quiz-game.controller.js';
 import {
   gameSessionIdParamsSchema,
   setReadyBodySchema,
@@ -40,4 +41,10 @@ gameSessionsRoutes.post(
   '/:sessionId/start',
   validate({ params: gameSessionIdParamsSchema }),
   gameSessionsController.startSession,
+);
+
+gameSessionsRoutes.get(
+  '/:sessionId/quiz/recap',
+  validate({ params: gameSessionIdParamsSchema }),
+  quizGameController.getRecap,
 );

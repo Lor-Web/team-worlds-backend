@@ -8,6 +8,7 @@ import {
   listWorldGamesQuerySchema,
   setReadyBodySchema,
 } from '../schemas/game-session.schemas.js';
+import { quizRecapResponseSchema } from '../schemas/quiz-game.schemas.js';
 import { worldIdParamsSchema } from '../schemas/world.schemas.js';
 
 const tag = 'Games';
@@ -18,7 +19,7 @@ openApiRegistry.registerPath({
   tags: [tag],
   summary: 'Создать игровую сессию',
   description:
-    'Создаёт сессию в статусе lobby. Требуется право world.games.host. Ведущий автоматически добавляется как готовый участник.',
+    'Создаёт сессию в статусе lobby. Требуется право world.games.host. Для quiz укажите quizTemplateId и quizLobby — контент копируется в gameConfig.quizSnapshot.',
   security: [{ bearerAuth: [] }],
   request: {
     params: worldIdParamsSchema,
@@ -256,6 +257,45 @@ openApiRegistry.registerPath({
     },
     409: {
       description: 'Не все готовы / мало игроков / не в лобби',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'get',
+  path: '/games/{sessionId}/quiz/recap',
+  tags: [tag],
+  summary: 'Персональная сводка квиза',
+  description:
+    'Доступно участнику после завершения игры (status=finished). Вопросы, ваши ответы, правильные ответы, очки и изменение рейтинга в мире.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: gameSessionIdParamsSchema,
+  },
+  responses: {
+    200: {
+      description: 'Сводка',
+      content: {
+        'application/json': { schema: quizRecapResponseSchema },
+      },
+    },
+    401: {
+      description: 'Не авторизован',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    403: {
+      description: 'Не участник сессии',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Игра ещё не завершена',
       content: {
         'application/json': { schema: apiErrorSchema },
       },

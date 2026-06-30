@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import { corsOrigins } from '../config/corsOrigins.js';
 import { registerUserNotificationHandlers } from '../modules/notifications/socket/user-notifications.handlers.js';
 import { registerGameLobbyHandlers } from '../modules/games/socket/game-lobby.handlers.js';
+import { registerQuizGameHandlers } from '../modules/quiz-game/socket/quiz-game.handlers.js';
 import { registerWorldGamesHandlers } from '../modules/worlds/socket/world-games.handlers.js';
 import { registerPresenceHandlers } from './presence.handlers.js';
 import { socketAuthMiddleware } from './socket.auth.js';
@@ -21,6 +22,7 @@ export function initSocketServer(httpServer: HttpServer): Server {
   io.use(socketAuthMiddleware);
   registerWorldGamesHandlers(io);
   registerGameLobbyHandlers(io);
+  registerQuizGameHandlers(io);
   registerPresenceHandlers(io);
   registerUserNotificationHandlers(io);
 

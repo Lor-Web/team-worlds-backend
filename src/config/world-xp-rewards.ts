@@ -10,5 +10,5 @@ export type WorldXpActivityCode = (typeof WorldXpActivity)[keyof typeof WorldXpA
 export const WORLD_XP_REWARDS: Record<WorldXpActivityCode, number> = {
   MEMBER_JOINED: 5,
   GAME_STARTED: 10,
-  GAME_FINISHED: 15,
+  GAME_FINISHED: 20,
 };

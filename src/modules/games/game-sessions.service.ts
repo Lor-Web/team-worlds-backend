@@ -13,6 +13,7 @@ import { hostGraceService } from './host-grace.service.js';
 import { gameLobbyBroadcast } from './socket/game-lobby.broadcast.js';
 import {
   getActivePlayers,
+  parseGameConfig,
   parseSessionSettings,
   toGameSessionDto,
   toGameSessionListItemDto,
@@ -25,6 +26,10 @@ import {
 } from './game-sessions.helpers.js';
 import { gameSessionsRepository } from './game-sessions.repository.js';
 import { notificationTriggers } from '../notifications/notification-triggers.js';
+import { quizTemplatesService } from '../quiz-templates/quiz-templates.service.js';
+import { quizGameService } from '../quiz-game/quiz-game.service.js';
+import { quizGameEngine } from '../quiz-game/quiz-game.engine.js';
+import { quizGameBroadcast } from '../quiz-game/socket/quiz-game.broadcast.js';
 import type {
   CreateGameSessionBody,
   ListWorldGamesQuery,
@@ -75,6 +80,25 @@ function assertCanStart(
   }
 }
 
+async function resolveGameConfigForCreate(
+  worldId: string,
+  input: CreateGameSessionBody,
+): Promise<Record<string, unknown>> {
+  if (input.templateSlug === 'quiz') {
+    const quizSnapshot = await quizTemplatesService.buildSnapshotForSession(
+      worldId,
+      input.quizTemplateId!,
+    );
+
+    return {
+      quizSnapshot,
+      quizLobby: input.quizLobby!,
+    };
+  }
+
+  return input.gameConfig ?? {};
+}
+
 export const gameSessionsService = {
   async createSession(
     userId: string,
@@ -109,12 +133,14 @@ export const gameSessionsService = {
       });
     }
 
+    const gameConfig = await resolveGameConfigForCreate(worldId, input);
+
     const session = await gameSessionsRepository.createSessionWithHost({
       worldId,
       templateId: template.id,
       hostId: userId,
       settings,
-      gameConfig: input.gameConfig ?? {},
+      gameConfig,
     });
 
     await worldGamesBroadcast.gameCreated(worldId, session.id);
@@ -212,6 +238,29 @@ export const gameSessionsService = {
     return getSessionDto(sessionId, userId);
   },
 
+  async leaveLobbyPresence(userId: string, sessionId: string): Promise<void> {
+    const session = await gameSessionsRepository.findByIdWithDetails(sessionId);
+
+    if (!session || session.status !== 'lobby') {
+      return;
+    }
+
+    const player = session.players.find((item) => item.userId === userId);
+
+    if (!player || player.leftAt !== null) {
+      return;
+    }
+
+    await gameSessionsRepository.setPlayerLeft(sessionId, userId);
+
+    if (session.hostId === userId && !session.hostGraceExpiresAt) {
+      await hostGraceService.begin(sessionId, session.worldId);
+    }
+
+    await worldGamesBroadcast.gameUpdated(session.worldId, sessionId);
+    await gameLobbyBroadcast.lobbyUpdated(sessionId);
+  },
+
   async setReady(
     userId: string,
     sessionId: string,
@@ -261,6 +310,16 @@ export const gameSessionsService = {
 
     assertCanStart(activePlayers, settings);
 
+    const isQuiz = sessionWithPlayers.template.slug === 'quiz';
+    let gameConfig = parseGameConfig(sessionWithPlayers.gameConfig);
+
+    if (isQuiz) {
+      const activePlayerIds = activePlayers.map((player) => player.userId);
+      quizGameService.assertCanStart(activePlayerIds, gameConfig);
+      gameConfig = quizGameService.initRuntimeOnStart(gameConfig, activePlayerIds);
+      await gameSessionsRepository.updateGameConfig(sessionId, gameConfig);
+    }
+
     await gameSessionsRepository.updateSessionStatus(sessionId, {
       status: 'active',
       startedAt: new Date(),
@@ -274,6 +333,11 @@ export const gameSessionsService = {
       session.worldId,
       WorldXpActivity.GAME_STARTED,
     );
+
+    if (isQuiz) {
+      await quizGameBroadcast.gameStarted(sessionId, gameConfig);
+      await quizGameEngine.beginGame(sessionId);
+    }
 
     return getSessionDto(sessionId, userId);
   },

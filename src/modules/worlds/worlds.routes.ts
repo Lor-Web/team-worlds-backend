@@ -5,6 +5,7 @@ import { validate } from '../../shared/middleware/validate.middleware.js';
 import { createGameSessionBodySchema, listWorldGamesQuerySchema } from '../games/game-sessions.validators.js';
 import { gameSessionsController } from '../games/game-sessions.controller.js';
 import { worldInviteCreationRoutes } from '../world-invites/world-invites.routes.js';
+import { quizTemplateRoutes } from '../quiz-templates/quiz-templates.routes.js';
 import { worldsController } from './worlds.controller.js';
 import {
   createWorldBodySchema,
@@ -13,6 +14,7 @@ import {
   listWorldsQuerySchema,
   updateWorldBodySchema,
   worldIdParamsSchema,
+  worldMemberParamsSchema,
 } from './worlds.validators.js';
 
 export const worldsRoutes = Router();
@@ -45,6 +47,8 @@ worldsRoutes.get(
   gameSessionsController.listWorldSessions,
 );
 
+worldsRoutes.use('/:worldId/quiz-templates', quizTemplateRoutes);
+
 worldsRoutes.post(
   '/:worldId/games',
   validate({ params: worldIdParamsSchema, body: createGameSessionBodySchema }),
@@ -73,6 +77,18 @@ worldsRoutes.post(
   '/:worldId/restore',
   validate({ params: worldIdParamsSchema }),
   worldsController.restoreWorld,
+);
+
+worldsRoutes.post(
+  '/:worldId/leave',
+  validate({ params: worldIdParamsSchema }),
+  worldsController.leaveWorld,
+);
+
+worldsRoutes.delete(
+  '/:worldId/members/:userId',
+  validate({ params: worldMemberParamsSchema }),
+  worldsController.kickMember,
 );
 
 worldsRoutes.use('/:worldId/invites', worldInviteCreationRoutes);

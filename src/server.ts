@@ -5,6 +5,7 @@ import { env } from './config/env.js';
 import { prisma } from './shared/db/prisma.js';
 import { closeSocketServer, initSocketServer } from './socket/socket.server.js';
 import { hostGraceService } from './modules/games/host-grace.service.js';
+import { quizGameEngine } from './modules/quiz-game/quiz-game.engine.js';
 
 const app = createApp();
 const httpServer = createServer(app);
@@ -12,6 +13,7 @@ const httpServer = createServer(app);
 initSocketServer(httpServer);
 
 void hostGraceService.recoverPendingTimers();
+void quizGameEngine.recoverTimers();
 
 httpServer.listen(env.PORT, () => {
   console.log(`Server running on http://localhost:${env.PORT}`);

@@ -23,7 +23,12 @@ import {
   type WorldSummaryDto,
 } from './worlds.dto.js';
 import { worldsRepository } from './worlds.repository.js';
+import { gameSessionsRepository } from '../games/game-sessions.repository.js';
+import { hostGraceService } from '../games/host-grace.service.js';
+import { gameLobbyBroadcast } from '../games/socket/game-lobby.broadcast.js';
 import { notificationTriggers } from '../notifications/notification-triggers.js';
+import { worldGamesBroadcast } from './socket/world-games.broadcast.js';
+import { worldPresenceBroadcast } from './socket/world-presence.broadcast.js';
 import type {
   CreateWorldBody,
   JoinWorldBody,
@@ -108,6 +113,45 @@ async function buildRankInfoForWorlds(
   }
 
   return result;
+}
+
+function assertNotOwner(membership: { role: string }): void {
+  if (membership.role === 'owner') {
+    throw new AppError('Владелец не может покинуть мир. Архивируйте мир или передайте владение.', {
+      statusCode: 403,
+      code: 'WORLD_OWNER_CANNOT_LEAVE',
+    });
+  }
+}
+
+async function detachMemberFromWorld(worldId: string, userId: string): Promise<void> {
+  const inActiveGame = await worldsRepository.hasActiveGameParticipation(userId, worldId);
+
+  if (inActiveGame) {
+    throw new AppError('Нельзя выйти из мира во время активной игры', {
+      statusCode: 409,
+      code: 'WORLD_MEMBER_IN_ACTIVE_GAME',
+    });
+  }
+
+  const lobbyParticipations = await worldsRepository.listLobbyParticipations(userId, worldId);
+
+  for (const participation of lobbyParticipations) {
+    const { session } = participation;
+
+    await gameSessionsRepository.setPlayerLeft(session.id, userId);
+
+    if (session.hostId === userId) {
+      await hostGraceService.begin(session.id, worldId);
+    }
+
+    await worldGamesBroadcast.gameUpdated(worldId, session.id);
+    await gameLobbyBroadcast.lobbyUpdated(session.id);
+  }
+
+  await worldsRepository.expirePendingInvitesForUser(worldId, userId);
+  await worldsRepository.deleteMembership(userId, worldId);
+  await worldPresenceBroadcast.notifyUserPresenceChanged(userId);
 }
 
 export const worldsService = {
@@ -337,6 +381,48 @@ export const worldsService = {
     const rankInfo = await worldRankingService.getRankForWorld(worldId);
 
     return toWorldSummaryDto(restoredWorld, membership.role, memberCount, rankInfo);
+  },
+
+  async leaveWorld(userId: string, worldId: string): Promise<void> {
+    const membership = await worldAccessService.requireActiveMembership(userId, worldId);
+    assertNotOwner(membership);
+    await detachMemberFromWorld(worldId, userId);
+  },
+
+  async kickMember(
+    actorId: string,
+    worldId: string,
+    targetUserId: string,
+  ): Promise<WorldDetailDto> {
+    const actorMembership = await worldAccessService.requireActiveMembership(actorId, worldId);
+    assertOwner(actorMembership);
+
+    if (actorId === targetUserId) {
+      throw new AppError('Нельзя исключить себя', {
+        statusCode: 400,
+        code: 'CANNOT_KICK_SELF',
+      });
+    }
+
+    const targetMembership = await worldsRepository.findMembership(targetUserId, worldId);
+
+    if (!targetMembership) {
+      throw new AppError('Пользователь не участник этого мира', {
+        statusCode: 404,
+        code: 'WORLD_MEMBER_NOT_FOUND',
+      });
+    }
+
+    if (targetMembership.role === 'owner') {
+      throw new AppError('Нельзя исключить владельца мира', {
+        statusCode: 403,
+        code: 'CANNOT_KICK_OWNER',
+      });
+    }
+
+    await detachMemberFromWorld(worldId, targetUserId);
+
+    return this.getWorldDetails(actorId, worldId);
   },
 };
 

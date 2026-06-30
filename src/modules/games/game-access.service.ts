@@ -13,6 +13,14 @@ export type GameSessionWithDetails = NonNullable<
   Awaited<ReturnType<typeof gameSessionsRepository.findByIdWithDetails>>
 >;
 
+function playerLeft(
+  session: GameSessionWithDetails,
+  userId: string,
+): boolean {
+  const player = session.players.find((item) => item.userId === userId);
+  return !player || player.leftAt !== null;
+}
+
 export const gameAccessService = {
   async requireSession(sessionId: string): Promise<GameSession> {
     const session = await gameSessionsRepository.findById(sessionId);
@@ -101,6 +109,90 @@ export const gameAccessService = {
       throw new AppError('Сессия заполнена', {
         statusCode: 403,
         code: 'GAME_SESSION_FULL',
+      });
+    }
+
+    return session;
+  },
+
+  async requireQuizParticipant(sessionId: string, userId: string) {
+    const session = await gameSessionsRepository.findByIdWithDetails(sessionId);
+
+    if (!session) {
+      throw new AppError('Игровая сессия не найдена', {
+        statusCode: 404,
+        code: 'GAME_SESSION_NOT_FOUND',
+      });
+    }
+
+    if (session.template.slug !== 'quiz') {
+      throw new AppError('Сессия не является квизом', {
+        statusCode: 409,
+        code: 'GAME_NOT_QUIZ',
+      });
+    }
+
+    await worldAccessService.requireActiveMembership(userId, session.worldId);
+
+    const player = await gameSessionsRepository.findPlayer(sessionId, userId);
+
+    if (!player) {
+      throw new AppError('Вы не участник этой сессии', {
+        statusCode: 403,
+        code: 'NOT_GAME_SESSION_PARTICIPANT',
+      });
+    }
+
+    return session;
+  },
+
+  async requireActiveQuizParticipant(sessionId: string, userId: string) {
+    const session = await this.requireQuizParticipant(sessionId, userId);
+
+    if (session.status !== 'active') {
+      throw new AppError('Игра не активна', {
+        statusCode: 409,
+        code: 'GAME_SESSION_NOT_ACTIVE',
+      });
+    }
+
+    if (playerLeft(session, userId)) {
+      throw new AppError('Вы не участник этой сессии', {
+        statusCode: 403,
+        code: 'NOT_GAME_SESSION_PARTICIPANT',
+      });
+    }
+
+    return session;
+  },
+
+  async requireFinishedQuizParticipant(sessionId: string, userId: string) {
+    const session = await this.requireQuizParticipant(sessionId, userId);
+
+    if (session.status !== 'finished') {
+      throw new AppError('Игра ещё не завершена', {
+        statusCode: 409,
+        code: 'GAME_SESSION_NOT_FINISHED',
+      });
+    }
+
+    return session;
+  },
+
+  async requireQuizGameJoin(sessionId: string, userId: string) {
+    const session = await this.requireQuizParticipant(sessionId, userId);
+
+    if (session.status !== 'active' && session.status !== 'finished') {
+      throw new AppError('Игра недоступна', {
+        statusCode: 409,
+        code: 'GAME_LOBBY_CLOSED',
+      });
+    }
+
+    if (session.status === 'active' && playerLeft(session, userId)) {
+      throw new AppError('Вы не участник этой сессии', {
+        statusCode: 403,
+        code: 'NOT_GAME_SESSION_PARTICIPANT',
       });
     }
 

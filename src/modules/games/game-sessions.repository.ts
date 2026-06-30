@@ -146,6 +146,13 @@ export const gameSessionsRepository = {
     });
   },
 
+  updateGameConfig(sessionId: string, gameConfig: object) {
+    return prisma.gameSession.update({
+      where: { id: sessionId },
+      data: { gameConfig },
+    });
+  },
+
   cancelSession(sessionId: string) {
     return prisma.gameSession.update({
       where: { id: sessionId },
@@ -219,6 +226,26 @@ export const gameSessionsRepository = {
   countActivePlayers(sessionId: string): Promise<number> {
     return prisma.gameSessionPlayer.count({
       where: { gameSessionId: sessionId, leftAt: null },
+    });
+  },
+
+  findActiveQuizSessions() {
+    return prisma.gameSession.findMany({
+      where: {
+        status: 'active',
+        template: { slug: 'quiz' },
+      },
+      include: { template: true },
+    });
+  },
+
+  finishSession(sessionId: string) {
+    return prisma.gameSession.update({
+      where: { id: sessionId },
+      data: {
+        status: 'finished',
+        finishedAt: new Date(),
+      },
     });
   },
 

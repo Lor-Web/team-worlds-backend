@@ -5,6 +5,7 @@ export {
   listWorldsQuerySchema,
   updateWorldBodySchema,
   worldIdParamsSchema,
+  worldMemberParamsSchema,
   type CreateWorldBody,
   type JoinWorldBody,
   type ListWorldLeaderboardQuery,

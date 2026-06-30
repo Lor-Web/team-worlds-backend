@@ -29,6 +29,10 @@
       "description": "Приглашения пользователей в мир"
     },
     {
+      "name": "Quiz Templates",
+      "description": "Контентные шаблоны квиза в мире"
+    },
+    {
       "name": "Games",
       "description": "Игровые сессии и lifecycle лобби"
     },
@@ -652,6 +656,11 @@
             },
             "description": "Дополнительные права"
           },
+          "rating": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Рейтинг участника в мире (не ниже 0)"
+          },
           "joinedAt": {
             "type": "string",
             "format": "date-time",
@@ -665,6 +674,7 @@
           "userId",
           "role",
           "permissions",
+          "rating",
           "joinedAt",
           "user"
         ]
@@ -870,6 +880,339 @@
         "required": [
           "invite",
           "world"
+        ]
+      },
+      "QuizTemplateSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "worldId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "roundCount": {
+            "type": "integer"
+          },
+          "questionCount": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "worldId",
+          "name",
+          "createdById",
+          "roundCount",
+          "questionCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "QuizTemplateListResponse": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizTemplateSummary"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "templates",
+          "nextCursor"
+        ]
+      },
+      "QuizAnswerInput": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "isCorrect": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text",
+          "isCorrect"
+        ]
+      },
+      "QuizAnswer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/QuizAnswerInput"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "order"
+            ]
+          }
+        ]
+      },
+      "QuizQuestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "videoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizAnswer"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "order",
+          "text",
+          "imageUrl",
+          "videoUrl",
+          "answers"
+        ]
+      },
+      "QuizRound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "description": "Отображаемое название (кастом или «Раунд N»)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Текст до старта раунда"
+          },
+          "isDoublePoints": {
+            "type": "boolean",
+            "description": "Раунд с риском удвоения очков"
+          },
+          "preRoundDelaySec": {
+            "type": "integer"
+          },
+          "questionTimeSec": {
+            "type": "integer"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizQuestion"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "order",
+          "name",
+          "description",
+          "isDoublePoints",
+          "preRoundDelaySec",
+          "questionTimeSec",
+          "questions"
+        ]
+      },
+      "QuizTemplateDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "worldId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizRound"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "worldId",
+          "name",
+          "createdById",
+          "createdAt",
+          "updatedAt",
+          "rounds"
+        ]
+      },
+      "QuizTemplateResponse": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/QuizTemplateDetail"
+          }
+        },
+        "required": [
+          "template"
+        ]
+      },
+      "QuizQuestionInput": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Текст вопроса"
+          },
+          "imageUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "URL или ключ изображения. TODO: загрузка через S3."
+          },
+          "videoUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "description": "Ссылка на видео (YouTube, CDN и т.д.)"
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizAnswerInput"
+            },
+            "minItems": 2,
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "answers"
+        ]
+      },
+      "QuizRoundInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Название раунда. По умолчанию — «Раунд N»",
+            "example": "Музыкальный"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "default": "",
+            "description": "Показывается игрокам во время таймера до старта раунда"
+          },
+          "isDoublePoints": {
+            "type": "boolean",
+            "default": false,
+            "description": "Раунд с удвоением: игрок может рискнуть удвоить очки; ошибка — штраф"
+          },
+          "preRoundDelaySec": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 600,
+            "description": "Пауза до начала раунда (сек)"
+          },
+          "questionTimeSec": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 600,
+            "description": "Время на каждый вопрос в раунде (сек)"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizQuestionInput"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "preRoundDelaySec",
+          "questionTimeSec",
+          "questions"
+        ]
+      },
+      "UpsertQuizTemplateBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "rounds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizRoundInput"
+            },
+            "minItems": 1,
+            "maxItems": 15
+          }
+        },
+        "required": [
+          "name",
+          "rounds"
         ]
       },
       "GameSessionSettings": {
@@ -1118,8 +1461,36 @@
               "alias",
               "custom"
             ],
-            "description": "Шаблон игры",
+            "description": "Тип игры",
             "example": "quiz"
+          },
+          "quizTemplateId": {
+            "type": "string",
+            "format": "cuid",
+            "description": "Обязателен для templateSlug=quiz — шаблон квиза мира"
+          },
+          "quizLobby": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "solo",
+                  "teams"
+                ],
+                "description": "Режим квиза: solo — каждый сам за себя, teams — команды"
+              },
+              "teamCount": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 20,
+                "description": "Число команд (обязательно для mode=teams)"
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "description": "Обязателен для templateSlug=quiz — solo или teams (+ teamCount). Задаётся при создании, не меняется."
           },
           "settings": {
             "$ref": "#/components/schemas/GameSessionSettingsInput"
@@ -1129,7 +1500,7 @@
             "additionalProperties": {
               "nullable": true
             },
-            "description": "Конфиг игры (пока пустой объект для не-Quiz)"
+            "description": "Конфиг игры (только для не-quiz; для quiz строится на сервере)"
           }
         },
         "required": [
@@ -1219,6 +1590,11 @@
           "isParticipant": {
             "type": "boolean",
             "description": "Вы уже в этой сессии"
+          },
+          "quizTemplateName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Название шаблона квиза (если quiz)"
           }
         },
         "required": [
@@ -1237,7 +1613,8 @@
           "myRole",
           "myIsReady",
           "canJoin",
-          "isParticipant"
+          "isParticipant",
+          "quizTemplateName"
         ]
       },
       "GameSessionListResponse": {
@@ -1264,6 +1641,117 @@
         },
         "required": [
           "isReady"
+        ]
+      },
+      "QuizRecapItem": {
+        "type": "object",
+        "properties": {
+          "roundIndex": {
+            "type": "integer"
+          },
+          "roundName": {
+            "type": "string"
+          },
+          "questionIndex": {
+            "type": "integer"
+          },
+          "questionId": {
+            "type": "string"
+          },
+          "questionText": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "videoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "yourAnswerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "yourAnswerText": {
+            "type": "string",
+            "nullable": true
+          },
+          "correctAnswerId": {
+            "type": "string"
+          },
+          "correctAnswerText": {
+            "type": "string"
+          },
+          "pointsEarned": {
+            "type": "integer"
+          },
+          "useDouble": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "roundIndex",
+          "roundName",
+          "questionIndex",
+          "questionId",
+          "questionText",
+          "imageUrl",
+          "videoUrl",
+          "yourAnswerId",
+          "yourAnswerText",
+          "correctAnswerId",
+          "correctAnswerText",
+          "pointsEarned",
+          "useDouble"
+        ]
+      },
+      "QuizRecap": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "finalScore": {
+            "type": "integer"
+          },
+          "ratingChange": {
+            "type": "integer"
+          },
+          "outcome": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "win",
+              "loss",
+              "draw"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizRecapItem"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "finalScore",
+          "ratingChange",
+          "outcome",
+          "items"
+        ]
+      },
+      "QuizRecapResponse": {
+        "type": "object",
+        "properties": {
+          "recap": {
+            "$ref": "#/components/schemas/QuizRecap"
+          }
+        },
+        "required": [
+          "recap"
         ]
       },
       "NotificationPayload": {
@@ -2293,6 +2781,152 @@
         }
       }
     },
+    "/worlds/{worldId}/leave": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Покинуть мир",
+        "description": "Участник (не owner) выходит из мира. Открытые лобби покидаются автоматически. Во время активной игры — 409.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Вы покинули мир"
+          },
+          "403": {
+            "description": "Вы не участник или вы owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Мир в архиве или активная игра",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/{worldId}/members/{userId}": {
+      "delete": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Исключить участника",
+        "description": "Owner исключает участника из мира. Нельзя исключить себя или другого owner.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Участник исключён, обновлённые детали мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorldDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Нельзя исключить себя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Только owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Мир или участник не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Мир в архиве или участник в активной игре",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/worlds/{worldId}/invites": {
       "post": {
         "tags": [
@@ -2617,13 +3251,340 @@
         }
       }
     },
+    "/worlds/{worldId}/quiz-templates": {
+      "get": {
+        "tags": [
+          "Quiz Templates"
+        ],
+        "summary": "Шаблоны квиза мира",
+        "description": "Список контентных шаблонов с пагинацией и фильтром по названию (`q`). Доступно участникам мира.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "description": "Фильтр по названию шаблона (подстрока)"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "description": "Размер страницы"
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Курсор пагинации из nextCursor"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список шаблонов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizTemplateListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Вы не участник мира",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Quiz Templates"
+        ],
+        "summary": "Создать шаблон квиза",
+        "description": "Полное создание шаблона с раундами, вопросами и ответами. Требуется право world.games.host.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertQuizTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Шаблон создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/worlds/{worldId}/quiz-templates/{templateId}": {
+      "get": {
+        "tags": [
+          "Quiz Templates"
+        ],
+        "summary": "Детали шаблона квиза",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "templateId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Шаблон",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizTemplateResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Quiz Templates"
+        ],
+        "summary": "Обновить шаблон квиза",
+        "description": "Полная замена раундов и вопросов. Требуется право world.games.host.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "templateId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertQuizTemplateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Шаблон обновлён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizTemplateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Quiz Templates"
+        ],
+        "summary": "Удалить шаблон квиза",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "worldId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "templateId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Удалено"
+          },
+          "404": {
+            "description": "Не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/worlds/{worldId}/games": {
       "post": {
         "tags": [
           "Games"
         ],
         "summary": "Создать игровую сессию",
-        "description": "Создаёт сессию в статусе lobby. Требуется право world.games.host. Ведущий автоматически добавляется как готовый участник.",
+        "description": "Создаёт сессию в статусе lobby. Требуется право world.games.host. Для quiz укажите quizTemplateId и quizLobby — контент копируется в gameConfig.quizSnapshot.",
         "security": [
           {
             "bearerAuth": []
@@ -3056,6 +4017,73 @@
           },
           "409": {
             "description": "Не все готовы / мало игроков / не в лобби",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{sessionId}/quiz/recap": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "Персональная сводка квиза",
+        "description": "Доступно участнику после завершения игры (status=finished). Вопросы, ваши ответы, правильные ответы, очки и изменение рейтинга в мире.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "cuid"
+            },
+            "required": true,
+            "name": "sessionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Сводка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizRecapResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Не участник сессии",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Игра ещё не завершена",
             "content": {
               "application/json": {
                 "schema": {

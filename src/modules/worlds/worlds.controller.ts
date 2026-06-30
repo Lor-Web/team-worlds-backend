@@ -75,4 +75,23 @@ export const worldsController = {
 
     res.json({ world });
   }),
+
+  leaveWorld: asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    const { worldId } = req.params as { worldId: string };
+    await worldsService.leaveWorld(userId, worldId);
+
+    res.status(204).send();
+  }),
+
+  kickMember: asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    const { worldId, userId: targetUserId } = req.params as {
+      worldId: string;
+      userId: string;
+    };
+    const world = await worldsService.kickMember(userId, worldId, targetUserId);
+
+    res.json({ world });
+  }),
 };

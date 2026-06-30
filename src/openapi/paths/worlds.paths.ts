@@ -11,6 +11,7 @@ import {
   worldIdParamsSchema,
   worldLeaderboardResponseSchema,
   worldListResponseSchema,
+  worldMemberParamsSchema,
   worldResponseSchema,
 } from '../schemas/world.schemas.js';
 
@@ -322,6 +323,87 @@ openApiRegistry.registerPath({
     },
     409: {
       description: 'Мир не в архиве',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'post',
+  path: '/worlds/{worldId}/leave',
+  tags: [tag],
+  summary: 'Покинуть мир',
+  description:
+    'Участник (не owner) выходит из мира. Открытые лобби покидаются автоматически. Во время активной игры — 409.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: worldIdParamsSchema,
+  },
+  responses: {
+    204: {
+      description: 'Вы покинули мир',
+    },
+    403: {
+      description: 'Вы не участник или вы owner',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    404: {
+      description: 'Мир не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Мир в архиве или активная игра',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+  },
+});
+
+openApiRegistry.registerPath({
+  method: 'delete',
+  path: '/worlds/{worldId}/members/{userId}',
+  tags: [tag],
+  summary: 'Исключить участника',
+  description:
+    'Owner исключает участника из мира. Нельзя исключить себя или другого owner.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: worldMemberParamsSchema,
+  },
+  responses: {
+    200: {
+      description: 'Участник исключён, обновлённые детали мира',
+      content: {
+        'application/json': { schema: worldDetailResponseSchema },
+      },
+    },
+    400: {
+      description: 'Нельзя исключить себя',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    403: {
+      description: 'Только owner',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    404: {
+      description: 'Мир или участник не найден',
+      content: {
+        'application/json': { schema: apiErrorSchema },
+      },
+    },
+    409: {
+      description: 'Мир в архиве или участник в активной игре',
       content: {
         'application/json': { schema: apiErrorSchema },
       },
