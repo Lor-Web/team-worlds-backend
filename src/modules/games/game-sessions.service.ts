@@ -238,6 +238,29 @@ export const gameSessionsService = {
     return getSessionDto(sessionId, userId);
   },
 
+  async leaveLobbyPresence(userId: string, sessionId: string): Promise<void> {
+    const session = await gameSessionsRepository.findByIdWithDetails(sessionId);
+
+    if (!session || session.status !== 'lobby') {
+      return;
+    }
+
+    const player = session.players.find((item) => item.userId === userId);
+
+    if (!player || player.leftAt !== null) {
+      return;
+    }
+
+    await gameSessionsRepository.setPlayerLeft(sessionId, userId);
+
+    if (session.hostId === userId && !session.hostGraceExpiresAt) {
+      await hostGraceService.begin(sessionId, session.worldId);
+    }
+
+    await worldGamesBroadcast.gameUpdated(session.worldId, sessionId);
+    await gameLobbyBroadcast.lobbyUpdated(sessionId);
+  },
+
   async setReady(
     userId: string,
     sessionId: string,

@@ -9,6 +9,7 @@ import { gameLobbyRoom } from '../../../socket/socket.rooms.js';
 import { gameAccessService } from '../game-access.service.js';
 import { gameLobbyBroadcast } from './game-lobby.broadcast.js';
 import { GameLobbySocketEvent, type GameLobbyJoinAck } from './game-lobby.events.js';
+import { gameSessionsService } from '../game-sessions.service.js';
 
 function toJoinAckError(error: unknown): GameLobbyJoinAck {
   if (error instanceof AppError) {
@@ -43,6 +44,7 @@ export function registerGameLobbyHandlers(io: Server): void {
       try {
         const { sessionId } = parseGameLobbyPayload(payload);
         void socket.leave(gameLobbyRoom(sessionId));
+        void gameSessionsService.leaveLobbyPresence(socket.data.userId, sessionId);
       } catch {
         // ignore invalid payload
       }
